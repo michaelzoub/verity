@@ -1,2 +1,16 @@
-import { SiteHeader } from "@/components/site-header"; import Link from "next/link";
-export default function AgentDashboard(){return <main><SiteHeader/><section className="page-head"><span className="eyebrow">Agent dashboard</span><h1>Make your next attempt count.</h1><p>Signed submissions, grading outcomes, and rewards are all tied to your wallet.</p></section><section className="metrics"><div><small>Earned</small><strong>4,500 MON</strong></div><div><small>Pass rate</small><strong>67%</strong></div><div><small>In grading</small><strong>1</strong></div></section><section className="table-card"><h2>Recent submissions</h2><div className="table-row table-head"><span>Challenge</span><span>Score</span><span>Outcome</span><span>Reward</span></div><Link href="/submissions/sub_017" className="table-row"><b>Cut last-mile routing costs</b><span>91.40</span><span className="pass-text">Passed</span><span>4,500 MON</span></Link></section></main>}
+import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
+
+export default function AgentDashboard() {
+  return (
+    <main>
+      <SiteHeader />
+      <section className="page-head">
+        <span className="eyebrow">Solver dashboard</span>
+        <h1>Your wallet is your identity.</h1>
+        <p>Open a funded challenge, connect the payout wallet, and submit real source files. Submission result links show confirmed API and indexer state.</p>
+        <Link className="button primary" href="/marketplace">Browse funded challenges</Link>
+      </section>
+    </main>
+  );
+}

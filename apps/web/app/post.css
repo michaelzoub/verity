@@ -1057,3 +1057,474 @@
     transform: none;
   }
 }
+
+/* Production Post Challenge fields and validation states. */
+
+.grader-panes--expanded {
+  grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+}
+
+.wizard-field {
+  display: block;
+  margin-top: 18px;
+}
+
+.wizard-field__label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.wizard-field__label small {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 400;
+  text-align: right;
+}
+
+.wizard-field .field-error {
+  display: block;
+}
+
+.compact-grid,
+.score-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.compact-grid .wizard-field {
+  margin-top: 18px;
+}
+
+.score-fields {
+  margin-top: 2px;
+}
+
+.score-fields--advanced {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.score-fields--private {
+  margin-top: 4px;
+}
+
+.advanced-settings {
+  margin-top: 22px;
+}
+
+.advanced-settings summary,
+.example-grader summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.advanced-settings--inverse {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.advanced-settings--inverse summary {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.derived-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 14px;
+  margin-top: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 10.5px;
+}
+
+.derived-settings strong {
+  color: rgba(255, 255, 255, 0.88);
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 500;
+}
+
+.code-editor {
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+.grader-pane--sealed .wizard-field__label {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.grader-pane--sealed .wizard-field__label small {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.post-wizard .inverse-input {
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.post-wizard select.inverse-input {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+}
+
+.post-wizard .inverse-input:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 75%, #fff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+.post-wizard .inverse-input[aria-invalid="true"] {
+  border-color: #ef8d84;
+}
+
+.grader-contract {
+  margin-top: 2px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.grader-contract > span {
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.grader-contract pre,
+.example-grader pre {
+  overflow-x: auto;
+  margin: 9px 0 0;
+  color: #fff;
+  font: 11px/1.6 var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  white-space: pre;
+}
+
+.grader-contract p,
+.example-grader > p {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.grader-contract code {
+  color: #fff;
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+}
+
+.grader-contract--result {
+  margin-top: 18px;
+}
+
+.source-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 18px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.source-tabs button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: 600;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.source-tabs button:hover {
+  color: #fff;
+}
+
+.source-tabs button.picked {
+  background: #fff;
+  color: var(--ink);
+}
+
+.source-tabs button:active {
+  transform: scale(0.96);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.example-grader {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 11px;
+}
+
+.example-grader summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  list-style: none;
+}
+
+.example-grader summary::-webkit-details-marker {
+  display: none;
+}
+
+.example-grader summary > span,
+.example-grader summary button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.example-grader[open] summary > span svg {
+  transform: rotate(180deg);
+}
+
+.example-grader summary button {
+  min-height: 32px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
+}
+
+.example-grader summary button:hover {
+  color: #fff;
+}
+
+.example-grader pre {
+  max-height: 320px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.grader-validation {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.validation-result {
+  margin: 0;
+  padding: 11px 12px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.validation-result--success {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid rgba(190, 238, 117, 0.28);
+  background: rgba(111, 147, 49, 0.22);
+  color: #e7f7c9;
+}
+
+.validation-result--success svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.validation-result--success strong,
+.validation-result--success span {
+  display: block;
+}
+
+.validation-result--success span {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.validation-result--error {
+  border: 1px solid rgba(239, 141, 132, 0.35);
+  background: rgba(180, 35, 24, 0.2);
+  color: #ffc6c0;
+}
+
+.validation-result--stale {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.sealed-button {
+  width: 100%;
+  border-color: #fff;
+  background: #fff;
+  color: var(--ink);
+}
+
+.sealed-button:hover {
+  background: #f0f0eb;
+}
+
+.sealed-button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.spin-icon {
+  animation: wizard-spin 900ms linear infinite;
+}
+
+@keyframes wizard-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auth-warning {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: #fff0ee;
+  color: var(--wizard-red);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.wallet-button {
+  margin-top: 10px;
+}
+
+.confirm-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  align-items: start;
+  gap: 20px;
+}
+
+.publish-card {
+  position: sticky;
+  top: 20px;
+}
+
+.publish-amount {
+  display: block;
+  margin-top: 15px;
+  font-size: 38px;
+  letter-spacing: -0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+.publish-facts {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.publish-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.publish-facts dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.publish-facts dd {
+  margin: 0;
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.confirm-check {
+  display: grid !important;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin-top: 0 !important;
+  color: var(--muted);
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.5;
+}
+
+.confirm-check input {
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+}
+
+.publish-button {
+  margin-top: 18px;
+}
+
+@media (max-width: 960px) {
+  .grader-panes--expanded,
+  .confirm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .publish-card {
+    position: static;
+  }
+}
+
+@media (max-width: 700px) {
+  .compact-grid,
+  .score-fields,
+  .score-fields--advanced {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .wizard-field__label {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .wizard-field__label small {
+    text-align: left;
+  }
+
+  .grader-contract pre,
+  .example-grader pre {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin-icon {
+    animation-duration: 1.8s;
+  }
+}

@@ -2,7 +2,7 @@ import { createHash, createHmac } from "node:crypto";
 import { graderInputSchema } from "@verity/api-contract";
 import type { GradingJob, TrustedFunctionCall } from "@verity/domain";
 import { SupabaseStore } from "@verity/adapters";
-import { runGrader, validateE2BTemplates } from "./sandbox";
+import { runCandidateBundle, runGrader, validateE2BTemplates } from "./sandbox";
 import { validateTrustedExecution } from "./execution-validation";
 
 const required = [
@@ -45,7 +45,7 @@ async function loop() {
     const source = Buffer.from(await store.getObject(job.grader.objectKey)).toString("utf8");
     const rawSubmission = Buffer.from(await store.getObject(job.solutionObjectKey)).toString("utf8");
     const envelope = JSON.parse(rawSubmission) as {
-      payload: { code: string; language: "typescript" | "javascript" | "python"; finalOutput: unknown; artifacts?: any[] };
+      payload: { sourceFiles: { path: string; content: string }[]; language: "typescript" | "javascript" | "python"; finalOutput: unknown; artifacts?: any[] };
       trustedFunctionCallTrace: TrustedFunctionCall[];
       traceTrust: "none" | "platform-hmac";
       platformExecutionId?: string;
@@ -56,9 +56,38 @@ async function loop() {
       || validateTrustedExecution(envelope.payload.finalOutput, trace, job.requiredFunctions ?? [], job.submissionSchema ?? {})) {
       await unevaluable(job); return setTimeout(loop, 250);
     }
+    const entrypoint = envelope.payload.sourceFiles.find(file => file.path === job.submissionEntrypoint);
+    if (!entrypoint) {
+      await unevaluable(job); return setTimeout(loop, 250);
+    }
+    const limits = {
+      timeoutMs: Number(process.env.GRADER_TIMEOUT_MS!),
+      maxOutputBytes: Number(process.env.GRADER_MAX_OUTPUT_BYTES!),
+      maxMemoryMb: Number(process.env.GRADER_MEMORY_MB!),
+    };
+    const candidate = await runCandidateBundle(
+      envelope.payload.language,
+      envelope.payload.sourceFiles,
+      job.submissionEntrypoint,
+      job.candidateFunctionName,
+      envelope.payload.finalOutput,
+      limits,
+    );
+    if (!candidate.ok) {
+      await call("/internal/worker-results", {
+        jobId: job.id, challengeId: job.challengeId, submissionId: job.submissionId,
+        submissionHash: job.submissionHash, agentWallet: job.agentWallet,
+        graderCommitment: job.graderCommitment, graderVersion: job.graderVersion,
+        attempt: job.attempts,
+        outcome: candidate.errorCode === "GRADER_TIMEOUT" ? "GRADING_TIMEOUT" : "UNEVALUABLE",
+        errorCode: candidate.errorCode === "GRADER_TIMEOUT" ? "GRADER_TIMEOUT" : "SUBMISSION_INVALID",
+        sandboxId: candidate.sandboxId,
+      });
+      return setTimeout(loop, 250);
+    }
     const input = graderInputSchema.parse({
-      submittedCode: { source: envelope.payload.code, language: envelope.payload.language },
-      agentFinalOutput: envelope.payload.finalOutput,
+      submittedCode: { source: entrypoint.content, files: envelope.payload.sourceFiles, language: envelope.payload.language },
+      agentFinalOutput: candidate.output,
       trustedFunctionCallTrace: trace,
       producedArtifacts: (envelope.payload.artifacts ?? []).map((artifact: any) => {
         const serialized = JSON.stringify(artifact.content ?? null);
@@ -72,11 +101,7 @@ async function loop() {
         runtime: "verity-e2b-grader-worker",
       },
     });
-    const result = normalizeResult(await runGrader(job.grader.language, source, input, {
-      timeoutMs: Number(process.env.GRADER_TIMEOUT_MS!),
-      maxOutputBytes: Number(process.env.GRADER_MAX_OUTPUT_BYTES!),
-      maxMemoryMb: Number(process.env.GRADER_MEMORY_MB!),
-    }));
+    const result = normalizeResult(await runGrader(job.grader.language, source, input, limits));
     const callback = {
       jobId: job.id, challengeId: job.challengeId, submissionId: job.submissionId,
       submissionHash: job.submissionHash, agentWallet: job.agentWallet,

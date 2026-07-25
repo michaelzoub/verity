@@ -37,13 +37,36 @@ export const publicChallengeSpecSchema = z.object({
   if ((value.language === "typescript" && extension !== "ts") || (value.language === "javascript" && extension !== "js") || (value.language === "python" && extension !== "py")) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "entrypoint extension must match public specification language" });
 });
 export const graderResultSchema = z.object({ score: decimal, passed: z.boolean().optional(), feedback: z.string().max(16_000), metadata: z.record(jsonValue).default({}) }).strict();
-export const graderInputSchema = z.object({ submittedCode: z.object({ source: z.string(), language: graderLanguageSchema }).strict(), agentFinalOutput: jsonValue, trustedFunctionCallTrace: z.array(z.object({ name: z.string(), arguments: jsonValue, output: jsonValue, sequence: z.number().int().nonnegative(), occurredAt: z.string().datetime(), runtimeId: z.string().min(1) }).strict()), producedArtifacts: z.array(z.object({ name: z.string().min(1), mediaType: z.string().min(1), sha256: z.string().regex(/^[a-f0-9]{64}$/), bytes: z.number().int().nonnegative(), content: jsonValue.optional() }).strict()), challengeRequirements: z.object({ requiredFunctions: z.array(requiredFunctionSchema), submissionSchema: z.record(z.unknown()).default({}) }).strict(), scoreSchema, executionMetadata: z.object({ submissionId: z.string().min(1), challengeId: z.string().min(1), submissionHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/), receivedAt: z.string().datetime(), runtime: z.string().min(1) }).strict() }).strict();
-export const agentSubmissionSchema = z.object({ code: z.string().min(1).max(1_000_000), language: graderLanguageSchema, finalOutput: jsonValue, artifacts: z.array(z.object({ name: z.string().min(1), mediaType: z.string().min(1), content: jsonValue.optional() }).strict()).default([]) }).strict();
+const sourceFileSchema = z.object({
+  path: z.string().min(1).max(240).regex(/^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*$/),
+  content: z.string().max(1_000_000),
+}).strict();
+const submittedCodeSchema = z.object({
+  source: z.string().min(1).max(1_000_000),
+  files: z.array(sourceFileSchema).min(1).max(128),
+  language: graderLanguageSchema,
+}).strict();
+export const graderInputSchema = z.object({ submittedCode: submittedCodeSchema, agentFinalOutput: jsonValue, trustedFunctionCallTrace: z.array(z.object({ name: z.string(), arguments: jsonValue, output: jsonValue, sequence: z.number().int().nonnegative(), occurredAt: z.string().datetime(), runtimeId: z.string().min(1) }).strict()), producedArtifacts: z.array(z.object({ name: z.string().min(1), mediaType: z.string().min(1), sha256: z.string().regex(/^[a-f0-9]{64}$/), bytes: z.number().int().nonnegative(), content: jsonValue.optional() }).strict()), challengeRequirements: z.object({ requiredFunctions: z.array(requiredFunctionSchema), submissionSchema: z.record(z.unknown()).default({}) }).strict(), scoreSchema, executionMetadata: z.object({ submissionId: z.string().min(1), challengeId: z.string().min(1), submissionHash: z.string().regex(/^0x[0-9a-fA-F]{64}$/), receivedAt: z.string().datetime(), runtime: z.string().min(1) }).strict() }).strict();
+export const agentSubmissionSchema = z.object({
+  sourceFiles: z.array(sourceFileSchema).min(1).max(128),
+  language: graderLanguageSchema,
+  finalOutput: jsonValue,
+  artifacts: z.array(z.object({ name: z.string().min(1), mediaType: z.string().min(1), content: jsonValue.optional() }).strict()).default([]),
+}).strict().superRefine((value, ctx) => {
+  const paths = new Set<string>();
+  let bytes = 0;
+  for (const file of value.sourceFiles) {
+    if (paths.has(file.path)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "duplicate source file path" });
+    paths.add(file.path);
+    bytes += new TextEncoder().encode(file.content).byteLength;
+  }
+  if (bytes > 1_000_000) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "source file bundle exceeds 1 MB" });
+});
 export const trustedFunctionCallSchema = graderInputSchema.shape.trustedFunctionCallTrace.element;
 const graderDefinition = z.object({ language: graderLanguageSchema, runtimeVersion: z.string().min(1).max(80), entrypoint: z.string().optional(), graderSource: z.string().optional(), graderSourceBase64: z.string().optional(), graderFileName: z.string().min(1).optional(), graderConfig: z.record(z.unknown()).default({}), dependencies: z.array(z.string().min(1)).max(32).default([]) });
 const validateGraderDefinition = <T extends z.AnyZodObject>(schema: T) => schema.superRefine((v: any, ctx) => { if (Boolean(v.graderSource) === Boolean(v.graderSourceBase64)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "provide exactly one pasted graderSource or graderSourceBase64" }); if (v.graderSourceBase64 && !v.graderFileName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "uploaded grader source requires graderFileName" }); if (v.entrypoint && v.entrypoint !== (v.language === "python" ? "grade" : "default")) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "unsupported_grader_entrypoint" }); });
 export const graderPreflightSchema = validateGraderDefinition(graderDefinition.extend({ validationSample: agentSubmissionSchema.optional(), requiredFunctions: z.array(requiredFunctionSchema).default([]), submissionSchema: z.record(z.unknown()).default({}), scoring: scoreSchema }));
-const createChallengeBase = z.object({ title: z.string().min(3), description: z.string().min(10), tags: z.array(z.string()).min(1), agentContext: z.string().min(1), rewardWei: z.string().regex(/^[1-9]\d*$/), maxSubmissions: z.number().int().positive(), deadline: z.string().datetime(), chainId: z.literal(10143), requiredFunctions: z.array(requiredFunctionSchema).default([]), submissionSchema: z.record(z.unknown()).default({}), validationSample: agentSubmissionSchema.optional(), scoring: scoreSchema, publicSpec: publicChallengeSpecSchema }).merge(graderDefinition);
+const createChallengeBase = z.object({ title: z.string().min(3), description: z.string().min(10), tags: z.array(z.string()).min(1), agentContext: z.string().min(1), rewardWei: z.string().regex(/^[1-9]\d*$/), fundingWallet: z.string().regex(/^0x[0-9a-fA-F]{40}$/), maxSubmissions: z.number().int().positive(), deadline: z.string().datetime(), chainId: z.literal(10143), requiredFunctions: z.array(requiredFunctionSchema).default([]), submissionSchema: z.record(z.unknown()).default({}), validationSample: agentSubmissionSchema.optional(), scoring: scoreSchema, publicSpec: publicChallengeSpecSchema }).merge(graderDefinition);
 export const createChallengeSchema = validateGraderDefinition(createChallengeBase).superRefine((value, ctx) => {
   if (value.publicSpec.language !== value.language || value.publicSpec.runtimeVersion !== value.runtimeVersion) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "public specification runtime must match grader runtime" });
   if (value.publicSpec.scoring.passingScore !== value.scoring.passingScore || value.publicSpec.scoring.scoreScale !== value.scoring.scoreScale) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "public specification score schema must match challenge scoring" });

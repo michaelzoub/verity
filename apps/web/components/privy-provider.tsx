@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 
-// Browser-safe flags come from next.config.ts. Privy is only loaded when auth is enabled
-// so broken optional wallet deps cannot take down the whole app in mock mode.
+// Browser-safe flags come from next.config.ts. Privy is loaded only when configured;
+// otherwise company mutations remain unavailable.
 export const companyAuthEnabled =
   process.env.NEXT_PUBLIC_PRIVY_AUTH_ENABLED === "true" &&
   Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);

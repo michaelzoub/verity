@@ -1,7 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { extname, resolve } from "node:path";
+import { extname, join, resolve } from "node:path";
 import {
   createChallengeSchema, graderPreflightSchema, platformSubmissionSchema,
   publicTestSubmissionSchema, submitSolutionSchema, workerResultSchema,
@@ -11,7 +11,7 @@ import type { ChallengeRecord, GradingJob, Submission, PrivateGrader, TrustedFun
 import { SupabaseStore } from "@verity/adapters";
 import {
   createPublicClient, createWalletClient, decodeEventLog, defineChain, encodeFunctionData,
-  getAddress, http, keccak256, parseEventLogs, recoverMessageAddress, stringToHex,
+  formatEther, getAddress, http, keccak256, parseEventLogs, recoverMessageAddress, stringToHex, zeroAddress,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { authenticateCompany, AuthError, requireCompanyOwnership } from "./auth";
@@ -29,8 +29,8 @@ for (const key of required) if (!process.env[key]) throw new Error(`${key} is re
 if (Number(process.env.CHAIN_ID) !== 10143) throw new Error("Verity provider mode requires Monad Testnet chain id 10143");
 
 const artifactRoot = resolve(process.cwd(), "../../artifacts/contracts");
-const escrowArtifact = JSON.parse(readFileSync(`${artifactRoot}ChallengeEscrow.json`, "utf8"));
-const factoryArtifact = JSON.parse(readFileSync(`${artifactRoot}ChallengeFactory.json`, "utf8"));
+const escrowArtifact = JSON.parse(readFileSync(join(artifactRoot, "ChallengeEscrow.json"), "utf8"));
+const factoryArtifact = JSON.parse(readFileSync(join(artifactRoot, "ChallengeFactory.json"), "utf8"));
 const port = Number(process.env.API_PORT ?? 4000);
 const store = new SupabaseStore();
 const rpcUrl = process.env.RPC_URL!;
@@ -48,10 +48,13 @@ const platformSecret = process.env.PLATFORM_RUNTIME_SHARED_SECRET!;
 
 const publicChallenge = (challenge: ChallengeRecord) => {
   const {
-    companyId: _companyId, authorizedBackend: _authorizedBackend, grader: _grader,
+    companyId: _companyId, creationKey: _creationKey, creationRequestHash: _creationRequestHash,
+    intendedFundingWallet: _intendedFundingWallet,
+    authorizedBackend: _authorizedBackend, grader: _grader,
     graderVersion: _graderVersion, rewardWei: _rewardWei, passingScoreScaled: _passingScoreScaled,
     minScoreScaled: _minScoreScaled, maxScoreScaled: _maxScoreScaled,
-    deploymentBlock: _deploymentBlock, indexed: _indexed, paid: _paid, refunded: _refunded,
+    deploymentBlock: _deploymentBlock, fundingBlockNumber: _fundingBlockNumber,
+    fundedAmountWei: _fundedAmountWei, indexed: _indexed, paid: _paid, refunded: _refunded,
     onchainChallengeId: _onchainChallengeId, preflightedAt: _preflightedAt,
     requiredFunctions, submissionSchema, ...safe
   } = challenge;
@@ -76,12 +79,20 @@ async function publicTest(challenge: ChallengeRecord, body: unknown) {
   return { passed: results.every(result => result.passed), results };
 }
 const publicSubmission = (submission: Submission) => {
-  const { objectKey: _objectKey, settlementSignature: _signature, ...safe } = submission;
+  const {
+    objectKey: _objectKey, settlementSignature: _signature, settlementNonce: _nonce,
+    settlementExpiry: _expiry, settlementBroadcastAt: _broadcastAt, graderResult: _graderResult,
+    gradingSandboxId: _sandboxId, failureReason: _failureReason, jobId: _jobId,
+    graderCommitment: _graderCommitment, graderVersion: _graderVersion,
+    submittedEventId: _submittedEventId, finalizedEventId: _finalizedEventId,
+    payoutEventId: _payoutEventId, traceTrust: _traceTrust,
+    platformExecutionId: _platformExecutionId, ...safe
+  } = submission;
   return safe;
 };
 const cors = (res: ServerResponse) => {
   res.setHeader("access-control-allow-origin", process.env.WEB_URL!);
-  res.setHeader("access-control-allow-headers", "authorization,content-type,x-verity-worker-signature,x-verity-platform-signature");
+  res.setHeader("access-control-allow-headers", "authorization,content-type,idempotency-key,x-verity-worker-signature,x-verity-platform-signature");
   res.setHeader("access-control-allow-methods", "GET,POST,OPTIONS");
   res.setHeader("vary", "origin");
 };
@@ -89,6 +100,23 @@ const send = (res: ServerResponse, status: number, body: unknown) => {
   cors(res); res.writeHead(status, { "content-type": "application/json" });
   res.end(status === 204 ? undefined : JSON.stringify(body));
 };
+const safeClientErrors = new Set([
+  "request_too_large", "invalid_grader_source_encoding", "invalid_grader_source",
+  "grader_extension_language_mismatch", "GRADER_MISSING_ENTRYPOINT",
+  "GRADER_SCORE_OUT_OF_RANGE", "invalid_score_range", "deadline_must_be_in_future",
+  "public_solution_required", "starter_solution_failed_public_examples",
+  "required_function_validation_requires_platform_execution",
+  "invalid_or_replayed_wallet_nonce", "challenge_capacity_reached", "duplicate_submission",
+  "challenge_expired", "challenge_not_live", "submission_language_mismatch",
+  "submission_entrypoint_missing", "invalid_payout_wallet",
+]);
+function clientError(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  if (error instanceof SyntaxError || (error instanceof Error && error.name === "ZodError")) {
+    return { status: 400, code: "invalid_request" };
+  }
+  return safeClientErrors.has(message) ? { status: 400, code: message } : { status: 500, code: "internal_error" };
+}
 async function readBody(req: IncomingMessage) {
   const chunks: Buffer[] = []; let size = 0;
   for await (const chunk of req) {
@@ -145,9 +173,11 @@ function scoreTerms(scoring: { passingScore: string; minScore?: string; maxScore
 async function preflight(input: ReturnType<typeof graderPreflightSchema.parse>) {
   const normalized: any = { ...input, entrypoint: input.language === "python" ? "grade" : "default" };
   const { source } = validateGrader(normalized, "preflight/private");
-  const sample = input.validationSample ?? { code: "// preflight sample", language: input.language, finalOutput: {}, artifacts: [] };
+  const extension = input.language === "typescript" ? "ts" : input.language === "javascript" ? "js" : "py";
+  const sample = input.validationSample ?? { sourceFiles: [{ path: `solution.${extension}`, content: "// preflight sample" }], language: input.language, finalOutput: {}, artifacts: [] };
+  const sampleEntrypoint = sample.sourceFiles[0];
   const result = await runGrader(input.language, source, {
-    submittedCode: { source: sample.code, language: sample.language },
+    submittedCode: { source: sampleEntrypoint.content, files: sample.sourceFiles, language: sample.language },
     agentFinalOutput: sample.finalOutput, trustedFunctionCallTrace: [],
     producedArtifacts: sample.artifacts.map((artifact: any) => ({
       ...artifact, sha256: sha256Hex(Buffer.from(JSON.stringify(artifact.content ?? null))),
@@ -232,9 +262,13 @@ async function dispatchSettlement(submission: Submission, challenge: ChallengeRe
 async function createSubmission(challenge: ChallengeRecord, rawInput: unknown, trace: TrustedFunctionCall[], platformExecutionId?: string) {
   const input = platformExecutionId ? platformSubmissionSchema.parse(rawInput) : submitSolutionSchema.parse(rawInput);
   if (!platformExecutionId && challenge.requiredFunctions.length) throw new Error("required_function_validation_requires_platform_execution");
+  if (Date.now() >= new Date(challenge.deadline).getTime()) throw new Error("challenge_expired");
+  if (input.payload.language !== challenge.publicSpec.language) throw new Error("submission_language_mismatch");
+  if (!input.payload.sourceFiles.some(file => file.path === challenge.publicSpec.entrypoint)) throw new Error("submission_entrypoint_missing");
   const nonce = await store.getWalletNonce(input.nonce);
   if (!nonce || nonce.usedAt || nonce.challengeId !== challenge.id || Date.now() > new Date(nonce.expiresAt).getTime()) throw new Error("invalid_or_replayed_wallet_nonce");
-  const agent = await recoverMessageAddress({ message: walletMessage(challenge.id, nonce.nonce, nonce.expiresAt), signature: input.signature as `0x${string}` });
+  const agent = getAddress(await recoverMessageAddress({ message: walletMessage(challenge.id, nonce.nonce, nonce.expiresAt), signature: input.signature as `0x${string}` }));
+  if (agent === zeroAddress) throw new Error("invalid_payout_wallet");
   const id = randomUUID();
   const envelope = { payload: input.payload, trustedFunctionCallTrace: trace, traceTrust: platformExecutionId ? "platform-hmac" : "none", platformExecutionId };
   const bytes = Buffer.from(JSON.stringify(envelope)); const submissionHash = `0x${sha256Hex(bytes)}`;
@@ -242,6 +276,9 @@ async function createSubmission(challenge: ChallengeRecord, rawInput: unknown, t
   const job: GradingJob = {
     id: randomUUID(), submissionId: id, challengeId: challenge.id, submissionHash,
     agentWallet: agent, graderCommitment: challenge.graderCommitment!, graderVersion: challenge.graderVersion,
+    submissionEntrypoint: challenge.publicSpec.entrypoint,
+    candidateFunctionName: challenge.publicSpec.examples[0].functionName,
+    candidateInput: challenge.publicSpec.examples[0].input,
     attempts: 1, status: "queued", createdAt: new Date().toISOString(),
     requiredFunctions: challenge.requiredFunctions, submissionSchema: challenge.submissionSchema,
     scoreSchema: { passingScore: challenge.passingScore, minScore: challenge.minScore, maxScore: challenge.maxScore, scoreScale: challenge.scoreScale, scoreUnit: challenge.scoreUnit },
@@ -253,7 +290,13 @@ async function createSubmission(challenge: ChallengeRecord, rawInput: unknown, t
     traceTrust: platformExecutionId ? "platform-hmac" : "none", platformExecutionId,
   };
   const created = await store.createSubmissionJob(input.nonce, submission, job, challenge.maxSubmissions);
-  if (created !== "created") throw new Error(created === "capacity" ? "challenge_capacity_reached" : "invalid_or_replayed_wallet_nonce");
+  if (created !== "created") {
+    if (created === "capacity") throw new Error("challenge_capacity_reached");
+    if (created === "duplicate") throw new Error("duplicate_submission");
+    if (created === "expired") throw new Error("challenge_expired");
+    if (created === "challenge_not_live") throw new Error("challenge_not_live");
+    throw new Error("invalid_or_replayed_wallet_nonce");
+  }
   return submission;
 }
 
@@ -317,17 +360,36 @@ async function main() {
       if (req.method === "POST" && url.pathname === "/api/graders/preflight") {
         await authenticateCompany(req, store); const input = graderPreflightSchema.parse(value);
         const validation = await preflight(input);
-        return send(res, 200, { ok: true, entrypoint: input.language === "python" ? "grade" : "default", validationResult: validation.result, sandboxId: validation.sandboxId });
+        return send(res, 200, { ok: true, entrypoint: input.language === "python" ? "grade" : "default", validationResult: validation.result });
       }
       if (req.method === "POST" && url.pathname === "/api/challenges") {
         const auth = await authenticateCompany(req, store); const input = createChallengeSchema.parse(value);
+        const creationKey = req.headers["idempotency-key"];
+        if (typeof creationKey !== "string" || !/^[A-Za-z0-9_-]{16,128}$/.test(creationKey)) {
+          return send(res, 400, { error: "invalid_idempotency_key" });
+        }
+        const creationRequestHash = sha256Hex(Buffer.from(raw));
+        const existing = await store.findChallengeByCreationKey(auth.company.id, creationKey);
+        if (existing) {
+          if (existing.creationRequestHash !== creationRequestHash) {
+            return send(res, 409, { error: "idempotency_key_payload_mismatch" });
+          }
+          const existingTerms = scoreTerms(existing.publicSpec.scoring);
+          const data = encodeFunctionData({
+            abi: factoryArtifact.abi, functionName: "createChallenge",
+            args: [keccak256(stringToHex(existing.id)), existingTerms.pass, existing.maxSubmissions, BigInt(Math.floor(new Date(existing.deadline).getTime() / 1000)), backend.address, existing.graderCommitment, existing.graderVersion],
+          });
+          return send(res, 200, { challenge: publicChallenge(existing), walletTransaction: { to: factoryAddress, data, value: existing.rewardWei, chainId: 10143 }, idempotentReplay: true });
+        }
         if (new Date(input.deadline).getTime() <= Date.now()) throw new Error("deadline_must_be_in_future");
         const id = randomUUID(); const graderObjectKey = `graders/${id}.${input.language === "typescript" ? "ts" : input.language === "javascript" ? "js" : "py"}`;
         const { grader } = validateGrader(input, graderObjectKey); const terms = scoreTerms(input.scoring);
         await preflight(input);
         const challenge: ChallengeRecord = {
-          id, companyId: auth.company.id, title: input.title, description: input.description, tags: input.tags,
-          reward: `${input.rewardWei} wei`, passingScore: input.scoring.passingScore, minScore: input.scoring.minScore,
+          id, companyId: auth.company.id, creationKey, creationRequestHash,
+          intendedFundingWallet: getAddress(input.fundingWallet), title: input.title,
+          description: input.description, tags: input.tags,
+          reward: `${formatEther(BigInt(input.rewardWei))} MON`, passingScore: input.scoring.passingScore, minScore: input.scoring.minScore,
           maxScore: input.scoring.maxScore, scoreScale: input.scoring.scoreScale, scoreUnit: input.scoring.scoreUnit,
           submissions: 0, maxSubmissions: input.maxSubmissions, deadline: input.deadline, requester: "",
           status: "funding", context: input.agentContext, format: "JSON", graderType: `${input.language} private grader`,
@@ -338,7 +400,8 @@ async function main() {
           passingScoreScaled: terms.pass.toString(), minScoreScaled: terms.min?.toString(), maxScoreScaled: terms.max?.toString(),
           createdAt: new Date().toISOString(), indexed: false, paid: false, refunded: false,
         };
-        const publicSolution = input.publicSpec.starterCode ?? input.validationSample?.code;
+        const publicSolution = input.publicSpec.starterCode
+          ?? input.validationSample?.sourceFiles.find((file: { path: string; content: string }) => file.path === input.publicSpec.entrypoint)?.content;
         if (!publicSolution || (input.validationSample && !input.publicSpec.starterCode && input.validationSample.language !== input.publicSpec.language)) throw new Error("public_solution_required");
         const check = await publicTest(challenge, { code: publicSolution, language: input.publicSpec.language });
         if (!check.passed) throw new Error("starter_solution_failed_public_examples");
@@ -355,8 +418,15 @@ async function main() {
         if (!challenge) return send(res, 404, { error: "challenge_not_found" });
         requireCompanyOwnership(challenge.companyId, auth.company.id);
         const transactionHash = String((value as any).transactionHash) as `0x${string}`;
-        const [receipt, transaction] = await Promise.all([publicClient.getTransactionReceipt({ hash: transactionHash }), publicClient.getTransaction({ hash: transactionHash })]);
-        if (receipt.status !== "success" || transaction.to?.toLowerCase() !== factoryAddress.toLowerCase() || transaction.value !== BigInt(challenge.rewardWei)) return send(res, 409, { error: "funding_not_confirmed" });
+        const [receipt, transaction] = await Promise.all([
+          publicClient.waitForTransactionReceipt({ hash: transactionHash, confirmations: 1, timeout: 120_000 }),
+          publicClient.getTransaction({ hash: transactionHash }),
+        ]);
+        if (receipt.status !== "success"
+          || transaction.to?.toLowerCase() !== factoryAddress.toLowerCase()
+          || transaction.from.toLowerCase() !== challenge.intendedFundingWallet.toLowerCase()
+          || transaction.value !== BigInt(challenge.rewardWei)
+        ) return send(res, 409, { error: "funding_not_confirmed" });
         const event = receipt.logs.filter(log => log.address.toLowerCase() === factoryAddress.toLowerCase()).map(log => {
           try { return decodeEventLog({ abi: factoryArtifact.abi, ...log }); } catch { return undefined; }
         }).find((log: any) => log?.eventName === "ChallengeDeployed" && log.args.challengeId?.toLowerCase() === keccak256(stringToHex(challenge.id)).toLowerCase()) as any;
@@ -374,8 +444,20 @@ async function main() {
         if (!await publicClient.getBytecode({ address: event.args.escrow })) return send(res, 409, { error: "escrow_bytecode_missing" });
         challenge.contractAddress = event.args.escrow; challenge.onchainChallengeId = event.args.challengeId;
         challenge.requester = transaction.from; challenge.transactionHash = transactionHash;
+        challenge.fundedAmountWei = transaction.value.toString();
+        challenge.fundingBlockNumber = Number(receipt.blockNumber);
         challenge.deploymentBlock = Number(receipt.blockNumber); await store.saveChallenge(challenge);
-        return send(res, 202, { challenge: publicChallenge(challenge), status: "AWAITING_INDEX" });
+        return send(res, 202, {
+          challenge: publicChallenge(challenge),
+          status: "AWAITING_INDEX",
+          funding: {
+            chainId: challenge.chainId,
+            contractAddress: challenge.contractAddress,
+            transactionHash: challenge.transactionHash,
+            fundedAmountWei: challenge.fundedAmountWei,
+            blockNumber: challenge.fundingBlockNumber,
+          },
+        });
       }
       if (req.method === "POST" && parts[0] === "api" && parts[1] === "challenges" && parts[3] === "refund-transaction") {
         const auth = await authenticateCompany(req, store); const challenge = await store.getChallenge(parts[2]);
@@ -403,6 +485,10 @@ async function main() {
       if (req.method === "POST" && parts[0] === "api" && parts[1] === "challenges" && parts[3] === "submissions") {
         const challenge = await store.getChallenge(parts[2]);
         if (!challenge?.indexed || challenge.status !== "live") return send(res, 409, { error: "challenge_not_live" });
+        if (validHmac(req, raw, "x-verity-platform-signature", platformSecret)) {
+          const input = platformSubmissionSchema.parse(value);
+          return send(res, 202, { submission: publicSubmission(await createSubmission(challenge, input, input.trustedFunctionCallTrace as TrustedFunctionCall[], input.platformExecutionId)) });
+        }
         return send(res, 202, { submission: publicSubmission(await createSubmission(challenge, value, [])) });
       }
       if (req.method === "POST" && parts[0] === "internal" && parts[1] === "platform-submissions" && parts[2]) {
@@ -416,6 +502,7 @@ async function main() {
         const job = await store.dequeue(); if (!job) return send(res, 204, {});
         const submission = await store.getSubmission(job.submissionId); const challenge = submission && await store.getChallenge(submission.challengeId);
         if (!submission || !challenge) return send(res, 409, { error: "job_missing_records" });
+        submission.status = "GRADING"; await store.saveSubmission(submission);
         job.claimedAt = new Date().toISOString(); const { sourceBase64: _source, ...workerGrader } = challenge.grader;
         job.grader = workerGrader; job.solutionObjectKey = submission.objectKey; await store.updateJob(job);
         return send(res, 200, { job });
@@ -426,8 +513,16 @@ async function main() {
         const submission = await store.getSubmission(result.submissionId); const challenge = await store.getChallenge(result.challengeId);
         if (!job || !submission || !challenge || job.status !== "running" || job.submissionId !== submission.id || job.attempts !== result.attempt || submission.submissionHash !== result.submissionHash || submission.agentWallet.toLowerCase() !== result.agentWallet.toLowerCase() || challenge.graderCommitment !== result.graderCommitment || challenge.graderVersion !== result.graderVersion) return send(res, 409, { error: "forged_stale_or_mismatched_worker_result" });
         if (result.outcome === "SCORED") {
-          const scaled = parseScaledScore(result.score!, challenge.scoreScale);
-          if ((challenge.minScoreScaled && scaled < BigInt(challenge.minScoreScaled)) || (challenge.maxScoreScaled && scaled > BigInt(challenge.maxScoreScaled))) return send(res, 422, { error: "GRADER_SCORE_OUT_OF_RANGE" });
+          let scaled: bigint;
+          try {
+            scaled = parseScaledScore(result.score!, challenge.scoreScale);
+            if ((challenge.minScoreScaled && scaled < BigInt(challenge.minScoreScaled)) || (challenge.maxScoreScaled && scaled > BigInt(challenge.maxScoreScaled))) throw new Error("GRADER_SCORE_OUT_OF_RANGE");
+          } catch {
+            submission.outcome = "GRADER_ERROR"; submission.status = "GRADER_ERROR";
+            submission.failureReason = "GRADER_SCORE_OUT_OF_RANGE"; submission.gradingSandboxId = result.sandboxId;
+            if (!await store.completeJob(job.id, result.attempt, submission)) return send(res, 409, { error: "worker_result_already_consumed" });
+            return send(res, 202, { submission: publicSubmission(submission) });
+          }
           submission.score = result.score; submission.scoreScaled = scaled.toString(); submission.graderResult = result.graderResult;
         } else submission.failureReason = result.errorCode ?? "GRADER_ERROR";
         submission.outcome = result.outcome;
@@ -440,7 +535,8 @@ async function main() {
       return send(res, 404, { error: "not_found" });
     } catch (error) {
       if (error instanceof AuthError) return send(res, error.status, { error: error.code });
-      return send(res, 400, { error: error instanceof Error ? error.message : "bad_request" });
+      const safe = clientError(error);
+      return send(res, safe.status, { error: safe.code });
     }
   });
   server.listen(port, () => console.log(`Verity API listening on http://localhost:${port}`));

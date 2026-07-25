@@ -14,7 +14,15 @@ const templateFor = (language: "typescript" | "javascript" | "python") => {
 };
 export async function validateE2BTemplates() {
   if (!process.env.E2B_API_KEY) throw new Error("E2B_API_KEY is required");
-  for (const key of ["E2B_TEMPLATE_TS", "E2B_TEMPLATE_JS", "E2B_TEMPLATE_PYTHON"]) { const id = process.env[key]; if (!id) throw new Error(`${key} is required`); const response = await fetch(`https://api.e2b.dev/templates/${encodeURIComponent(id)}`, { headers: { authorization: `Bearer ${process.env.E2B_API_KEY}` } }); if (!response.ok) throw new Error(`invalid E2B template ID: ${id} (${response.status})`); }
+  for (const key of ["E2B_TEMPLATE_TS", "E2B_TEMPLATE_JS", "E2B_TEMPLATE_PYTHON"]) {
+    const id = process.env[key];
+    if (!id) throw new Error(`${key} is required`);
+    const response = await fetch(
+      `https://api.e2b.app/templates/${encodeURIComponent(id)}`,
+      { headers: { "X-API-Key": process.env.E2B_API_KEY } },
+    );
+    if (!response.ok) throw new Error(`invalid E2B template ID: ${id} (${response.status})`);
+  }
 }
 
 /** The only grader executor. Every preflight and grading run creates and kills a fresh E2B VM. */
@@ -38,7 +46,7 @@ export async function runGrader(language: "typescript" | "javascript" | "python"
       const file = language === "typescript" ? "grader.ts" : "grader.mjs";
       await sandbox.files.write(`${root}/${file}`, source);
       const runnerFile = language === "typescript" ? "run.ts" : "run.mjs";
-      await sandbox.files.write(`${root}/${runnerFile}`, `import input from './input.json' with { type: 'json' };\nimport grade from './${file}';\nconst value = await grade(input); console.log(JSON.stringify(value));\n`);
+      await sandbox.files.write(`${root}/${runnerFile}`, `import input from './input.json' with { type: 'json' };\nimport grade from './${file}';\nasync function main() { const value = await grade(input); console.log(JSON.stringify(value)); }\nvoid main();\n`);
       await sandbox.files.write(`${root}/run.sh`, `exec ${runner} ${root}/${runnerFile}`);
     }
     const command = language === "python" ? `python3 ${root}/grader.py` : `sh ${root}/run.sh`;
@@ -70,7 +78,7 @@ export async function runSubmissionHarness(language: "typescript" | "javascript"
       const file = language === "typescript" ? "submission.ts" : "submission.mjs";
       const runner = language === "typescript" ? "tsx" : "node";
       await sandbox.files.write(`${root}/${file}`, source);
-      await sandbox.files.write(`${root}/run.${language === "typescript" ? "ts" : "mjs"}`, `import * as submitted from './${file}';\nimport input from './input.json' with { type: 'json' };\nconst fn = submitted['${functionName}']; if (typeof fn !== 'function') throw new Error('missing exported function'); console.log(JSON.stringify(await fn(input)));\n`);
+      await sandbox.files.write(`${root}/run.${language === "typescript" ? "ts" : "mjs"}`, `import * as submitted from './${file}';\nimport input from './input.json' with { type: 'json' };\nasync function main() { const fn = submitted['${functionName}']; if (typeof fn !== 'function') throw new Error('missing exported function'); console.log(JSON.stringify(await fn(input))); }\nvoid main();\n`);
       command = `${runner} ${root}/run.${language === "typescript" ? "ts" : "mjs"}`;
     }
     const execution = await sandbox.commands.run(command, { cwd: root, timeoutMs: limits.timeoutMs });
@@ -82,4 +90,70 @@ export async function runSubmissionHarness(language: "typescript" | "javascript"
   } catch (error) {
     return { ok: false, errorCode: /timeout/i.test(error instanceof Error ? error.message : "") ? "GRADER_TIMEOUT" : "SUBMISSION_INVALID", sandboxId: sandbox?.sandboxId };
   } finally { if (sandbox) await sandbox.kill().catch(() => undefined); }
+}
+
+/** Executes the submitted bundle in its own fresh sandbox. JSON enters only through stdin. */
+export async function runCandidateBundle(
+  language: "typescript" | "javascript" | "python",
+  files: { path: string; content: string }[],
+  entrypoint: string,
+  functionName: string,
+  input: unknown,
+  limits: SandboxLimits,
+): Promise<PublicHarnessResult> {
+  if (!process.env.E2B_API_KEY) throw new Error("E2B_API_KEY is required");
+  let sandbox: Sandbox | undefined;
+  try {
+    sandbox = await Sandbox.create(templateFor(language), {
+      timeoutMs: limits.timeoutMs + 30_000,
+      allowInternetAccess: false,
+    });
+    const root = "/home/oai/verity-candidate";
+    for (const file of files) await sandbox.files.write(`${root}/${file.path}`, file.content);
+    let command: string;
+    if (language === "python") {
+      const runner = `${root}/__verity_runner.py`;
+      await sandbox.files.write(runner, [
+        "import asyncio, importlib.util, json, sys",
+        `spec=importlib.util.spec_from_file_location("candidate", ${JSON.stringify(`${root}/${entrypoint}`)})`,
+        "module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)",
+        `fn=getattr(module, ${JSON.stringify(functionName)})`,
+        "value=fn(json.load(sys.stdin))",
+        "if asyncio.iscoroutine(value): value=asyncio.run(value)",
+        "print(json.dumps(value, separators=(',', ':')))",
+      ].join("\n"));
+      command = `python3 ${runner}`;
+    } else {
+      const runner = `${root}/__verity_runner.${language === "typescript" ? "ts" : "mjs"}`;
+      await sandbox.files.write(runner, [
+        "import fs from 'node:fs';",
+        `import * as candidate from './${entrypoint}';`,
+        `const fn=candidate[${JSON.stringify(functionName)}];`,
+        "if(typeof fn !== 'function') throw new Error('missing candidate function');",
+        "const input=JSON.parse(fs.readFileSync(0,'utf8'));",
+        "async function main(){process.stdout.write(JSON.stringify(await fn(input)));}",
+        "void main();",
+      ].join("\n"));
+      command = `${language === "typescript" ? "tsx" : "node"} ${runner}`;
+    }
+    const handle = await sandbox.commands.run(command, {
+      cwd: root,
+      timeoutMs: limits.timeoutMs,
+      background: true,
+      stdin: true,
+    });
+    await handle.sendStdin(JSON.stringify(input));
+    await handle.closeStdin();
+    const execution = await handle.wait();
+    const stdout = String(execution.stdout ?? "");
+    if (execution.exitCode !== 0 || Buffer.byteLength(stdout) > limits.maxOutputBytes) {
+      return { ok: false, errorCode: execution.exitCode === 0 ? "SUBMISSION_INVALID" : "GRADER_COMPILE_FAILURE", sandboxId: sandbox.sandboxId };
+    }
+    try { return { ok: true, output: JSON.parse(stdout), sandboxId: sandbox.sandboxId }; }
+    catch { return { ok: false, errorCode: "SUBMISSION_INVALID", sandboxId: sandbox.sandboxId }; }
+  } catch (error) {
+    return { ok: false, errorCode: /timeout/i.test(error instanceof Error ? error.message : "") ? "GRADER_TIMEOUT" : "SUBMISSION_INVALID", sandboxId: sandbox?.sandboxId };
+  } finally {
+    if (sandbox) await sandbox.kill().catch(() => undefined);
+  }
 }

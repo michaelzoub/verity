@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { runGrader } from "./sandbox";
+import { runCandidateBundle, runGrader } from "./sandbox";
 import { validateTrustedExecution } from "./execution-validation";
 
 test("validates authenticated function-call counts, order, and schemas", () => {
@@ -21,7 +21,7 @@ test("runs graders only against real E2B when provider credentials are present",
     return;
   }
   const input = {
-    submittedCode: { source: "export default 4", language: "typescript" },
+    submittedCode: { source: "export default 4", files: [{ path: "solution.ts", content: "export default 4" }], language: "typescript" },
     agentFinalOutput: { score: 4 }, trustedFunctionCallTrace: [], producedArtifacts: [],
     challengeRequirements: { requiredFunctions: [], submissionSchema: {} },
     scoreSchema: { passingScore: "1", scoreScale: 1 },
@@ -29,4 +29,21 @@ test("runs graders only against real E2B when provider credentials are present",
   };
   const result = await runGrader("typescript", "export default async function grade(input: any) { return { score: String(input.agentFinalOutput.score), feedback: 'ok', metadata: {} }; }", input);
   assert.equal(result.ok, true);
+});
+
+test("runs the actual source bundle with JSON stdin in a fresh E2B sandbox", async (t) => {
+  if (!process.env.E2B_API_KEY || !process.env.E2B_TEMPLATE_TS) {
+    t.skip("real E2B credentials are required");
+    return;
+  }
+  const result = await runCandidateBundle(
+    "typescript",
+    [{ path: "solution.ts", content: "export function solve(input: {value:number}) { return {value: input.value * 2}; }" }],
+    "solution.ts",
+    "solve",
+    { value: 21 },
+    { timeoutMs: 5_000, maxOutputBytes: 16_384, maxMemoryMb: 128 },
+  );
+  assert.equal(result.ok, true);
+  if (result.ok) assert.deepEqual(result.output, { value: 42 });
 });

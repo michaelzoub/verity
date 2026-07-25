@@ -57,6 +57,11 @@ export class SupabaseStore {
   }
   async saveChallenge(value: ChallengeRecord) { this.challenges.set(value.id, value); await this.record("challenge", value.id, value); }
   async getChallenge(id: string) { return this.challenges.get(id); }
+  async findChallengeByCreationKey(companyId: string, creationKey: string) {
+    return [...this.challenges.values()].find(value =>
+      value.companyId === companyId && value.creationKey === creationKey
+    );
+  }
   async saveCompany(value: Company) { this.companies.set(value.id, value); await this.record("company", value.id, value); }
   async findOrCreateCompany(candidate: Company) {
     const value = await this.sql.begin(async sql => {
@@ -79,9 +84,22 @@ export class SupabaseStore {
 
   async createSubmissionJob(nonceId: string, submission: Submission, job: GradingJob, maxSubmissions: number) {
     const result = await this.sql.begin(async sql => {
+      const challengeRows = await sql`select value from verity_records where kind='challenge' and id=${submission.challengeId} for update`;
+      const challenge = challengeRows[0]?.value as ChallengeRecord | undefined;
+      if (!challenge || !challenge.indexed || challenge.status !== "live") return "challenge_not_live";
+      if (Date.now() >= new Date(challenge.deadline).getTime()) return "expired";
       const nonceRows = await sql`select value from verity_records where kind='nonce' and id=${nonceId} for update`;
       const nonce = nonceRows[0]?.value as WalletNonce | undefined;
       if (!nonce || nonce.usedAt || nonce.challengeId !== submission.challengeId || Date.now() > new Date(nonce.expiresAt).getTime()) return "invalid_nonce";
+      const duplicateRows = await sql`
+        select id from verity_records
+        where kind='submission'
+          and value->>'challengeId'=${submission.challengeId}
+          and lower(value->>'agentWallet')=lower(${submission.agentWallet})
+          and value->>'submissionHash'=${submission.submissionHash}
+        limit 1
+      `;
+      if (duplicateRows.length) return "duplicate";
       const countRows = await sql`select count(*)::int as count from verity_records where kind='submission' and value->>'challengeId'=${submission.challengeId}`;
       if (Number(countRows[0].count) >= maxSubmissions) return "capacity";
       nonce.usedAt = new Date().toISOString();

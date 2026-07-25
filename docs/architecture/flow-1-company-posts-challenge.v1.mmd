@@ -8,14 +8,15 @@ sequenceDiagram
   participant IDX as Indexer
   C->>P: Company login
   P-->>C: Access token
-  C->>API: Privy bearer + public specification + private TS/JS/Python grader
+  C->>C: Connect and verify Monad funding wallet
+  C->>API: Privy bearer + idempotency key + connected funding wallet + public specification + private TS/JS/Python grader
   API->>W: Fresh E2B preflight and public starter/example test
   W-->>API: Strict validated GraderResult
-  API->>API: Require complete public spec, confirmation, passing preflight/test; private-store immutable grader
+  API->>API: Require complete public spec, confirmation, passing preflight/test, and private-store immutable grader
   API-->>C: Factory calldata + exact reward value
-  C->>F: createChallenge and fund reward
+  C->>F: createChallenge and fund reward from the bound Privy-connected wallet
   F->>E: deploy escrow with immutable company requester
-  E-->>IDX: ChallengeCreated(challengeId, commitment, terms)
+  E-->>IDX: ChallengeCreated(challengeId, commitment, terms, funding wallet)
   IDX->>API: Confirmed checkpointed live projection
   API-->>C: Publish only after indexed confirmation
   alt No passing payout before deadline

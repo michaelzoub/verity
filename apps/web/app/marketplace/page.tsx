@@ -1,16 +1,16 @@
 import { SiteHeader } from "@/components/site-header";
 import { MarketplaceBrowse } from "@/components/marketplace-browse";
-import type { Challenge } from "@verity/domain";
+import type { Challenge } from "@verity/sdk";
+import { createVerityClient } from "@verity/sdk";
 
 async function getChallenges(): Promise<Challenge[]> {
   try {
-    const res = await fetch(
-      `${process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}/api/challenges`,
-      { cache: "no-store" },
-    );
-    if (!res.ok) return [];
-    const data = (await res.json()) as { challenges?: Challenge[] };
-    return data.challenges ?? [];
+    const apiUrl = process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) throw new Error("API URL is required");
+    const { data } = await createVerityClient(apiUrl).GET("/api/challenges", {
+      cache: "no-store",
+    });
+    return data?.challenges ?? [];
   } catch {
     return [];
   }

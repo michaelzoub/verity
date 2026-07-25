@@ -6,6 +6,7 @@ contract ChallengeEscrow {
     bytes32 public constant RESULT_TYPEHASH = keccak256(
         "Settlement(uint256 chainId,address verifyingContract,bytes32 challengeId,bytes32 submissionId,bytes32 submissionHash,address agent,uint256 score,bytes32 outcome,bytes32 graderCommitment,uint32 graderVersion,uint256 nonce,uint256 expiry)"
     );
+    bytes32 public constant SCORED_OUTCOME = keccak256("SCORED");
     bytes32 private constant EIP712_DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
     uint256 private constant SECP256K1_HALF_ORDER =
@@ -47,6 +48,16 @@ contract ChallengeEscrow {
         bool paid,
         uint256 nonce
     );
+    event SubmissionRecorded(
+        bytes32 indexed submissionId,
+        bytes32 indexed submissionHash,
+        address indexed agent
+    );
+    event RewardPaid(
+        bytes32 indexed submissionId,
+        address indexed agent,
+        uint256 amount
+    );
     event ChallengeRefunded(bytes32 indexed challengeId, address indexed requester, uint256 amount);
     event AuthorizedBackendRotated(address indexed previousBackend, address indexed backend);
 
@@ -62,6 +73,7 @@ contract ChallengeEscrow {
     error InvalidExpiry();
     error InvalidChallenge();
     error AlreadyResolved();
+    error InvalidOutcome();
 
     constructor(
         bytes32 _challengeId,
@@ -131,6 +143,7 @@ contract ChallengeEscrow {
         if (expiry < block.timestamp || expiry > deadline) revert InvalidExpiry();
         if (agent == address(0)) revert InvalidAgent();
         if (submissionId == bytes32(0) || submissionHash == bytes32(0)) revert InvalidChallenge();
+        if (outcome != SCORED_OUTCOME) revert InvalidOutcome();
         if (finalized[submissionId]) revert DuplicateSubmission();
         if (usedNonces[nonce]) revert NonceUsed();
         if (submissions >= maxSubmissions) revert CapacityReached();
@@ -161,12 +174,14 @@ contract ChallengeEscrow {
         unchecked {
             ++submissions;
         }
+        emit SubmissionRecorded(submissionId, submissionHash, agent);
         bool shouldPay = score >= passingScore;
         if (shouldPay) {
             paid = true;
             uint256 amount = address(this).balance;
             (bool ok,) = agent.call{value: amount}("");
             if (!ok) revert TransferFailed();
+            emit RewardPaid(submissionId, agent, amount);
         }
         emit SubmissionFinalized(submissionId, submissionHash, agent, score, outcome, shouldPay, nonce);
     }

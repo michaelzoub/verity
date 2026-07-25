@@ -73,6 +73,19 @@
   },
   {
     "type": "function",
+    "name": "SCORED_OUTCOME",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "authorizedBackend",
     "inputs": [],
     "outputs": [
@@ -427,6 +440,31 @@
   },
   {
     "type": "event",
+    "name": "RewardPaid",
+    "inputs": [
+      {
+        "name": "submissionId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "SubmissionFinalized",
     "inputs": [
       {
@@ -475,6 +513,31 @@
     "anonymous": false
   },
   {
+    "type": "event",
+    "name": "SubmissionRecorded",
+    "inputs": [
+      {
+        "name": "submissionId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "submissionHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
     "type": "error",
     "name": "AlreadyResolved",
     "inputs": []
@@ -507,6 +570,11 @@
   {
     "type": "error",
     "name": "InvalidExpiry",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidOutcome",
     "inputs": []
   },
   {

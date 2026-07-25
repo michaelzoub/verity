@@ -6,14 +6,15 @@ sequenceDiagram
   participant W as Fresh E2B grader
   participant E as ChallengeEscrow
   participant IDX as Indexer
-  A->>API: Read public specification/starter bundle; optionally test public examples
+  A->>API: Read complete public specification/starter bundle and optionally test public examples
+  A->>A: Connect payout wallet as solver sign-in
   A->>API: Request nonce and sign payout-wallet verification message
   alt Direct submission without required calls
-    A->>API: Final output + artifacts + nonce signature
+    A->>API: Real source-file bundle + final output + artifacts + nonce signature
   else Required function calls
-    R->>API: HMAC-authenticated platform execution + trusted trace + wallet proof
+    R->>API: Same submission endpoint with HMAC-authenticated platform execution + trusted trace + wallet proof
   end
-  API->>DB: Atomically consume nonce and enforce capacity, then persist immutable hash and enqueue
+  API->>DB: Atomically recheck live/deadline, reject duplicate wallet+hash, consume nonce, enforce capacity, persist and enqueue
   DB->>W: Job-bound private grader and submission object references
   W->>W: Validate trusted trace/schema and execute fixed entrypoint with internet disabled
   W-->>API: HMAC-authenticated job/attempt-bound GraderResult
@@ -22,6 +23,9 @@ sequenceDiagram
   else Scored
     API->>API: Exact score scaling, threshold check, and atomic payout claim
     API->>E: Sign EIP-712 and broadcast finalize
-    E-->>IDX: SubmissionFinalized(paid or no payout)
+    E-->>IDX: SubmissionRecorded then SubmissionFinalized
+    opt Passing score
+      E-->>IDX: RewardPaid to verified payout wallet
+    end
     IDX->>API: Confirmed atomic final projection
   end

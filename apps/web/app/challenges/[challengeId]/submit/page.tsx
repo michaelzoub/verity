@@ -1,2 +1,121 @@
-"use client"; import { useState } from "react"; import Link from "next/link"; import { SiteHeader } from "@/components/site-header";
-export default function Submit(){const [state,setState]=useState(0);const labels=["Preparing submission","Awaiting signature","Uploading","Queued for grading","Grading","Submitting result on-chain","Finalizing","Passed"];return <main><SiteHeader/><div className="submit"><Link href="/challenges/route-optimizer" className="back">← Cut last-mile routing costs</Link><span className="eyebrow">New submission</span><h1>Put your solution to the test.</h1><p>Your signed solution is tied to your wallet. There is no bond or fee.</p><label>Solution <span className="muted">JSON route plan</span><textarea className="solution" defaultValue={'{\n  "routes": [],\n  "summary": ""\n}'}/></label><label>Submission summary<textarea defaultValue="Route plan reduces total distance while maintaining delivery windows."/></label><div className="wallet-card"><span>Agent wallet</span><b>0x4B20…91C8</b><small>Connected to Monad testnet</small></div><button className="button primary" onClick={()=>setState(x=>Math.min(x+1,7))}>{state===0?"Sign & submit":state===7?"View final result":"Continue grading"}</button><div className="submission-progress">{labels.map((x,i)=><span className={i<=state?"complete":""} key={x}>{i<state?"✓":i+1} {x}</span>)}</div>{state===7&&<Link href="/submissions/sub_017" className="result-link">Open submission result →</Link>}</div></main>}
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import type { SourceFile } from "@verity/domain";
+import type { Challenge } from "@verity/sdk";
+import { SiteHeader } from "@/components/site-header";
+import { publicApi } from "@/lib/verity-api";
+
+export default function Submit() {
+  const { challengeId } = useParams<{ challengeId: string }>();
+  const router = useRouter();
+  const [challenge, setChallenge] = useState<Challenge>();
+  const [files, setFiles] = useState<SourceFile[]>([]);
+  const [wallet, setWallet] = useState("");
+  const [finalOutput, setFinalOutput] = useState('{"score":"1"}');
+  const [status, setStatus] = useState("Connect a payout wallet and select source files.");
+  const [busy, setBusy] = useState(false);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  useEffect(() => {
+    if (!apiUrl) return setStatus("API URL is not configured.");
+    publicApi.GET("/api/challenges/{challengeId}", {
+      params: { path: { challengeId } },
+      cache: "no-store",
+    })
+      .then(({ data }) => {
+        if (!data) throw new Error("Challenge is not available.");
+        setChallenge(data as Challenge);
+      })
+      .catch(error => setStatus(error instanceof Error ? error.message : "Challenge is not available."));
+  }, [apiUrl, challengeId]);
+
+  async function connect() {
+    const provider = window.ethereum as { request(args: { method: string; params?: unknown[] }): Promise<unknown> } | undefined;
+    if (!provider) throw new Error("Install or open an EVM wallet to sign in.");
+    await provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x279f" }] });
+    const accounts = await provider.request({ method: "eth_requestAccounts" }) as string[];
+    if (!accounts[0] || !/^0x[0-9a-fA-F]{40}$/.test(accounts[0])) throw new Error("A valid payout wallet is required.");
+    setWallet(accounts[0]);
+    setStatus("Payout wallet verified locally. Sign the challenge nonce to submit.");
+  }
+
+  async function chooseFiles(list: FileList | null) {
+    const selected = Array.from(list ?? []);
+    const sourceFiles = await Promise.all(selected.map(async file => ({
+      path: file.webkitRelativePath || file.name,
+      content: await file.text(),
+    })));
+    setFiles(sourceFiles);
+  }
+
+  async function submit() {
+    const provider = window.ethereum as { request(args: { method: string; params?: unknown[] }): Promise<unknown> } | undefined;
+    if (!apiUrl || !challenge || !provider || !wallet || !files.length) return;
+    if (!files.some(file => file.path === challenge.publicSpec.entrypoint)) {
+      return setStatus(`The source bundle must include ${challenge.publicSpec.entrypoint}.`);
+    }
+    setBusy(true);
+    try {
+      const parsedOutput = JSON.parse(finalOutput);
+      setStatus("Requesting a challenge-bound payout-wallet nonce…");
+      const { data: nonceBody } = await publicApi.POST("/api/challenges/{challengeId}/wallet-nonces", {
+        params: { path: { challengeId } },
+      });
+      if (!nonceBody?.nonce || !nonceBody.message) throw new Error("Could not request wallet nonce.");
+
+      setStatus("Sign the payout-wallet verification message…");
+      const signature = await provider.request({
+        method: "personal_sign",
+        params: [nonceBody.message, wallet],
+      }) as string;
+
+      setStatus("Uploading source files and queueing isolated grading…");
+      const { data: body } = await publicApi.POST("/api/challenges/{challengeId}/submissions", {
+        params: { path: { challengeId } },
+        body: {
+          payload: { sourceFiles: files, language: challenge.publicSpec.language, finalOutput: parsedOutput, artifacts: [] },
+          nonce: nonceBody.nonce,
+          signature,
+        },
+      });
+      if (!body?.submission) throw new Error("Submission failed.");
+      router.push(`/submissions/${body.submission.id}`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Submission failed.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main>
+      <SiteHeader />
+      <div className="submit">
+        <Link href={`/challenges/${challengeId}`} className="back">← {challenge?.title ?? "Challenge"}</Link>
+        <span className="eyebrow">Verified-wallet submission</span>
+        <h1>Upload the source you want graded.</h1>
+        <p>No wallet means no submission. The signature binds this challenge and payout address; it does not authorize a transaction.</p>
+        <label>
+          Source files
+          <input type="file" multiple onChange={event => void chooseFiles(event.target.files)} />
+          <span className="muted">{files.length ? files.map(file => file.path).join(", ") : `Must include ${challenge?.publicSpec.entrypoint ?? "the declared entrypoint"}`}</span>
+        </label>
+        <label>Final output (JSON)<textarea className="solution" value={finalOutput} onChange={event => setFinalOutput(event.target.value)} /></label>
+        <div className="wallet-card">
+          <span>Payout wallet</span>
+          <b>{wallet ? `${wallet.slice(0, 8)}…${wallet.slice(-6)}` : "Not connected"}</b>
+          <small>This exact recovered address receives any passing payout.</small>
+        </div>
+        <button className="button ghost" type="button" onClick={() => void connect().catch(error => setStatus(error instanceof Error ? error.message : "Wallet connection failed."))}>
+          {wallet ? "Wallet connected" : "Sign in with payout wallet"}
+        </button>
+        <button className="button primary" disabled={busy || !challenge || !wallet || files.length === 0} onClick={submit}>
+          {busy ? "Submitting…" : "Sign & submit"}
+        </button>
+        <p className="status-line" role="status">{status}</p>
+      </div>
+    </main>
+  );
+}

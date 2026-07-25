@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ShieldCheck, Users } from "lucide-react";
-import type { Challenge } from "@verity/domain";
+import type { Challenge } from "@verity/sdk";
 import { scoreLabel } from "@/lib/challenge-form";
 
 interface ChallengeCardProps {

@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createChallengeSchema } from "./index";
+import { agentSubmissionSchema, createChallengeSchema, submitSolutionSchema } from "./index";
 
 const publicSpec = (language: "typescript" | "python" = "typescript") => ({ problemDescription: "Return the supplied number.", successCriteria: "Output equals input.", language, runtimeVersion: language === "python" ? "3.12" : "22", entrypoint: language === "python" ? "solution.py" : "solution.ts", requiredFunctions: [{ name: "solve", inputSchema: { type: "object" }, outputSchema: { type: "object" } }], submissionFormat: "One source file.", allowedDependencies: [], scoring: { passingScore: "4", scoreScale: 1 }, examples: [{ functionName: "solve", input: { value: 1 }, output: { value: 1 } }], documentationConfirmed: true as const });
-const base = { title: "Score schema", description: "A sufficiently long private grader challenge.", tags: ["test"], agentContext: "Return JSON.", rewardWei: "1", maxSubmissions: 1, deadline: "2030-01-01T00:00:00.000Z", runtimeVersion: "22", entrypoint: "default", graderSource: "export default async function grade(input) { return input.score; }", chainId: 10143, publicSpec: publicSpec() };
+const base = { title: "Score schema", description: "A sufficiently long private grader challenge.", tags: ["test"], agentContext: "Return JSON.", rewardWei: "1", fundingWallet: "0x1111111111111111111111111111111111111111", maxSubmissions: 1, deadline: "2030-01-01T00:00:00.000Z", runtimeVersion: "22", entrypoint: "default", graderSource: "export default async function grade(input) { return input.score; }", chainId: 10143, publicSpec: publicSpec() };
 
 test("defaults omitted scoreScale to exact integer scale one", () => {
   const parsed = createChallengeSchema.parse({ ...base, language: "typescript", scoring: { passingScore: "4", minScore: "0", maxScore: "4" } });
@@ -27,4 +27,20 @@ test("accepts complete TypeScript and Python public specifications", () => {
 test("rejects incomplete public entrypoint and function schemas", () => {
   assert.throws(() => createChallengeSchema.parse({ ...base, language: "typescript", scoring: { passingScore: "4", scoreScale: 1 }, publicSpec: { ...publicSpec(), entrypoint: "solution.py" } }), /entrypoint extension/);
   assert.throws(() => createChallengeSchema.parse({ ...base, language: "typescript", scoring: { passingScore: "4", scoreScale: 1 }, publicSpec: { ...publicSpec(), requiredFunctions: [{ name: "solve", inputSchema: {}, outputSchema: { type: "object" } }] } }), /JSON Schema requires/);
+});
+
+test("requires real, safe, unique source files and a wallet signature", () => {
+  const payload = {
+    sourceFiles: [{ path: "solution.ts", content: "export const solve = () => 1;" }],
+    language: "typescript" as const,
+    finalOutput: {},
+    artifacts: [],
+  };
+  assert.equal(agentSubmissionSchema.parse(payload).sourceFiles[0].path, "solution.ts");
+  for (const sourceFiles of [[], [{ path: "../secret.ts", content: "x" }], [{ path: "a.ts", content: "x" }, { path: "a.ts", content: "y" }]]) {
+    assert.throws(() => agentSubmissionSchema.parse({ ...payload, sourceFiles }));
+  }
+  const nonce = "00000000-0000-4000-8000-000000000000";
+  assert.throws(() => submitSolutionSchema.parse({ payload, nonce }), /signature/i);
+  assert.throws(() => submitSolutionSchema.parse({ payload, nonce, signature: "0x1234" }), /Invalid/);
 });

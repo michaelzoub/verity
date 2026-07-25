@@ -8,11 +8,12 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test lib/challenge-form.test.ts"
+    "test": "tsx --test lib/*.test.ts"
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.35.2",
     "@verity/domain": "file:../../packages/domain",
+    "@verity/sdk": "file:../../packages/sdk",
     "lucide-react": "^0.468.0",
     "next": "^15.1.6",
     "react": "^19.0.0",

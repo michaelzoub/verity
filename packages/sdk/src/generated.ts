@@ -140,7 +140,9 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header: {
+                    "Idempotency-Key": string;
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -588,7 +590,7 @@ export interface components {
             refundedTransactionHash?: string;
             requiredFunctions?: components["schemas"]["RequiredFunction"][];
             submissionSchema?: Record<string, never>;
-            publicSpec?: components["schemas"]["PublicChallengeSpec"];
+            publicSpec: components["schemas"]["PublicChallengeSpec"];
         };
         Submission: {
             id: string;
@@ -604,12 +606,6 @@ export interface components {
             scoreScaled?: string;
             outcome?: string;
             transactionHash?: string;
-            gradingSandboxId?: string;
-            failureReason?: string;
-            /** @enum {unknown} */
-            traceTrust: "none" | "platform-hmac";
-            platformExecutionId?: string;
-            graderResult?: components["schemas"]["GraderResult"];
         };
         ScoreSchema: {
             passingScore: string;
@@ -660,7 +656,10 @@ export interface components {
             documentationConfirmed: true;
         };
         AgentSubmission: {
-            code: string;
+            sourceFiles: {
+                path: string;
+                content: string;
+            }[];
             /** @enum {unknown} */
             language: "typescript" | "javascript" | "python";
             finalOutput: unknown;
@@ -688,6 +687,7 @@ export interface components {
             tags: string[];
             agentContext: string;
             rewardWei: string;
+            fundingWallet: string;
             maxSubmissions: number;
             /** Format: date-time */
             deadline: string;

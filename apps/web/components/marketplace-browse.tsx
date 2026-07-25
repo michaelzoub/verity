@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import type { Challenge } from "@verity/domain";
+import type { Challenge } from "@verity/sdk";
 import { ChallengeCard } from "@/components/challenge-card";
 
 const FILTERS = ["All work", "Finance", "Logistics", "Data", "Software", "Hard"] as const;

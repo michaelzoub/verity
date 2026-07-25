@@ -1,9 +1,9 @@
 {
   "network": "monad-testnet",
   "chainId": 10143,
-  "address": "0xB8cdDDe85EE2C2aAf6B83529735fDDc663dB623c",
-  "deploymentBlock": 48058674,
-  "deploymentBlockHash": "0x429ec07e1587f39afcd3a56884e2634ca924f4fbf49a4da421b0b3ea8ec2c29a",
-  "verifiedAt": "2026-07-25T19:52:11.330Z",
+  "address": "0x2B3B0148bAf689d2c9E776741E3db1461CC8F3D8",
+  "deploymentBlock": 48072564,
+  "deploymentBlockHash": "0x2333372f4f827be10b688ac28f7c8e4edc99b623891b145813fe74a48378783b",
+  "verifiedAt": "2026-07-25T21:17:36.104Z",
   "abi": "../ChallengeFactory.json"
 }

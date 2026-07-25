@@ -37,9 +37,14 @@ async function tick() {
       if (canonical.hash !== checkpoint.blockHash) {
         challenge.indexed = false; challenge.status = "funding"; challenge.paid = false;
         challenge.refunded = false; challenge.refundedTransactionHash = undefined; challenge.submissions = 0;
-        const affected = [...store.submissions.values()].filter(submission => submission.challengeId === challenge.id && submission.finalizedEventId);
+        const affected = [...store.submissions.values()].filter(submission =>
+          submission.challengeId === challenge.id
+          && (submission.submittedEventId || submission.finalizedEventId || submission.payoutEventId)
+        );
         for (const submission of affected) {
+          submission.submittedEventId = undefined;
           submission.finalizedEventId = undefined;
+          submission.payoutEventId = undefined;
           submission.status = submission.transactionHash ? "SETTLEMENT_PENDING" : "GRADED";
         }
         await store.resetIndexerProjection(address, challenge, affected);
@@ -69,17 +74,35 @@ async function tick() {
           && parsed.args.graderVersion === challenge.graderVersion;
         if (!termsMatch) throw new Error(`indexed escrow terms mismatch for ${challenge.id}`);
         challenge.indexed = true; challenge.status = "live";
+      } else if (parsed.eventName === "SubmissionRecorded") {
+        submission = [...store.submissions.values()].find(value =>
+          keccak256(stringToHex(value.id)).toLowerCase() === parsed.args.submissionId.toLowerCase()
+          && value.submissionHash.toLowerCase() === parsed.args.submissionHash.toLowerCase()
+          && value.payoutAddress.toLowerCase() === parsed.args.agent.toLowerCase()
+          && value.challengeId === challenge.id
+        );
+        if (!submission) throw new Error(`indexed submission does not match API record for ${challenge.id}`);
+        submission.submittedEventId = eventId;
+      } else if (parsed.eventName === "RewardPaid") {
+        submission = [...store.submissions.values()].find(value =>
+          keccak256(stringToHex(value.id)).toLowerCase() === parsed.args.submissionId.toLowerCase()
+          && value.payoutAddress.toLowerCase() === parsed.args.agent.toLowerCase()
+          && value.challengeId === challenge.id
+        );
+        if (!submission) throw new Error(`indexed payout does not match API record for ${challenge.id}`);
+        submission.payoutEventId = eventId;
+        challenge.paid = true;
       } else if (parsed.eventName === "SubmissionFinalized") {
         submission = [...store.submissions.values()].find(value =>
           keccak256(stringToHex(value.id)).toLowerCase() === parsed.args.submissionId.toLowerCase()
           && value.submissionHash.toLowerCase() === parsed.args.submissionHash.toLowerCase()
+          && value.payoutAddress.toLowerCase() === parsed.args.agent.toLowerCase()
           && value.challengeId === challenge.id
         );
-        if (submission) {
-          submission.status = parsed.args.paid ? "PAID" : "FINALIZED";
-          submission.scoreScaled = String(parsed.args.score);
-          submission.finalizedEventId = eventId;
-        }
+        if (!submission) throw new Error(`indexed finalization does not match API record for ${challenge.id}`);
+        submission.status = parsed.args.paid ? "PAID" : "FINALIZED";
+        submission.scoreScaled = String(parsed.args.score);
+        submission.finalizedEventId = eventId;
         challenge.submissions = Number(await client.readContract({ address, abi: artifact.abi, functionName: "submissions" }));
         challenge.paid = challenge.paid || Boolean(parsed.args.paid);
         if (parsed.args.paid) challenge.status = "settled";

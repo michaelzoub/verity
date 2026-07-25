@@ -19,6 +19,9 @@ if (await client.getChainId() !== 10143) throw new Error("RPC chain id mismatch"
 const address = process.env.CHALLENGE_FACTORY_ADDRESS;
 const bytecode = await client.getBytecode({ address });
 if (!bytecode || bytecode === "0x") throw new Error("factory bytecode missing");
+if (bytecode.toLowerCase() !== artifact.deployedBytecode.toLowerCase()) {
+  throw new Error("configured factory bytecode does not match the generated production artifact; redeploy and update CHALLENGE_FACTORY_ADDRESS");
+}
 const blockNumber = BigInt(process.env.CONTRACT_DEPLOYMENT_BLOCK);
 const block = await client.getBlock({ blockNumber });
 if (!block.hash) throw new Error("deployment block is not canonical");

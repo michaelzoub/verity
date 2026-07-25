@@ -48,7 +48,19 @@ contract ChallengeEscrowTest {
         uint256 nonce,
         uint256 expiry
     ) private returns (bytes memory) {
-        bytes32 outcome = keccak256("SCORED");
+        return _signatureFor(escrow, submissionId, submissionHash, agent, score, keccak256("SCORED"), nonce, expiry);
+    }
+
+    function _signatureFor(
+        ChallengeEscrow escrow,
+        bytes32 submissionId,
+        bytes32 submissionHash,
+        address payout,
+        uint256 score,
+        bytes32 outcome,
+        uint256 nonce,
+        uint256 expiry
+    ) private returns (bytes memory) {
         bytes32 structHash = keccak256(
             abi.encode(
                 escrow.RESULT_TYPEHASH(),
@@ -57,7 +69,7 @@ contract ChallengeEscrowTest {
                 CHALLENGE_ID,
                 submissionId,
                 submissionHash,
-                agent,
+                payout,
                 score,
                 outcome,
                 GRADER,
@@ -145,5 +157,72 @@ contract ChallengeEscrowTest {
         vm.prank(backend);
         escrow.rotateAuthorizedBackend(address(this));
         require(escrow.authorizedBackend() == address(this), "backend rotation");
+    }
+
+    function testRejectsInvalidSignatureAndWrongSolver() external {
+        uint256 expiry = block.timestamp + 1 days;
+        ChallengeEscrow escrow = _deploy(1, uint64(expiry));
+        bytes32 submissionId = keccak256("submission");
+        bytes32 submissionHash = keccak256("payload");
+
+        bytes memory valid = _signature(escrow, submissionId, submissionHash, 1, 1, expiry);
+        valid[0] = bytes1(uint8(valid[0]) ^ 1);
+        vm.prank(backend);
+        vm.expectRevert(ChallengeEscrow.InvalidSignature.selector);
+        escrow.finalize(submissionId, submissionHash, agent, 1, keccak256("SCORED"), 1, expiry, valid);
+
+        address payable wrongSolver = payable(vm.addr(0xBAD));
+        bytes memory agentSignature = _signature(escrow, submissionId, submissionHash, 1, 2, expiry);
+        vm.prank(backend);
+        vm.expectRevert(ChallengeEscrow.InvalidSignature.selector);
+        escrow.finalize(submissionId, submissionHash, wrongSolver, 1, keccak256("SCORED"), 2, expiry, agentSignature);
+
+    }
+
+    function testRejectsNonScoredOutcome() external {
+        uint256 expiry = block.timestamp + 1 days;
+        ChallengeEscrow escrow = _deploy(1, uint64(expiry));
+        bytes32 submissionId = keccak256("submission");
+        bytes32 submissionHash = keccak256("payload");
+        bytes32 invalidOutcome = keccak256("GRADER_ERROR");
+        bytes memory signature =
+            _signatureFor(escrow, submissionId, submissionHash, agent, 1, invalidOutcome, 3, expiry);
+        vm.prank(backend);
+        vm.expectRevert(ChallengeEscrow.InvalidOutcome.selector);
+        escrow.finalize(submissionId, submissionHash, agent, 1, invalidOutcome, 3, expiry, signature);
+    }
+
+    function testRejectsSubmissionAndNonceReplay() external {
+        uint256 deadline = block.timestamp + 1 days;
+        ChallengeEscrow escrow = _deploy(10, uint64(deadline));
+        bytes32 firstId = keccak256("first");
+        bytes32 firstHash = keccak256("payload-one");
+        bytes memory first = _signature(escrow, firstId, firstHash, 1, 7, deadline);
+        vm.prank(backend);
+        escrow.finalize(firstId, firstHash, agent, 1, keccak256("SCORED"), 7, deadline, first);
+
+        bytes memory duplicate = _signature(escrow, firstId, firstHash, 1, 8, deadline);
+        vm.prank(backend);
+        vm.expectRevert(ChallengeEscrow.DuplicateSubmission.selector);
+        escrow.finalize(firstId, firstHash, agent, 1, keccak256("SCORED"), 8, deadline, duplicate);
+
+        bytes32 secondId = keccak256("second");
+        bytes memory replayNonce = _signature(escrow, secondId, keccak256("payload-two"), 1, 7, deadline);
+        vm.prank(backend);
+        vm.expectRevert(ChallengeEscrow.NonceUsed.selector);
+        escrow.finalize(secondId, keccak256("payload-two"), agent, 1, keccak256("SCORED"), 7, deadline, replayNonce);
+
+    }
+
+    function testRejectsExpiredFinalize() external {
+        uint256 deadline = block.timestamp + 1 days;
+        ChallengeEscrow escrow = _deploy(10, uint64(deadline));
+        bytes32 submissionId = keccak256("expired-submission");
+        bytes32 submissionHash = keccak256("expired-payload");
+        bytes memory signature = _signature(escrow, submissionId, submissionHash, 10, 9, deadline);
+        vm.warp(deadline + 1);
+        vm.prank(backend);
+        vm.expectRevert(ChallengeEscrow.Expired.selector);
+        escrow.finalize(submissionId, submissionHash, agent, 10, keccak256("SCORED"), 9, deadline, signature);
     }
 }

@@ -7,7 +7,9 @@ await sql`create table if not exists verity_jobs (id uuid primary key, value jso
 await sql`create table if not exists verity_indexer_events (event_id text primary key, chain_id integer not null, contract_address text not null, block_number bigint not null, value jsonb not null, created_at timestamptz not null default now())`;
 await sql`create index if not exists verity_jobs_claimable on verity_jobs(status, created_at)`;
 await sql`create index if not exists verity_records_submission_challenge on verity_records ((value->>'challengeId')) where kind='submission'`;
+await sql`create unique index if not exists verity_submission_wallet_payload on verity_records ((value->>'challengeId'), lower(value->>'agentWallet'), (value->>'submissionHash')) where kind='submission'`;
 await sql`create unique index if not exists verity_company_privy_subject on verity_records ((value->>'privySubject')) where kind='company'`;
+await sql`create unique index if not exists verity_challenge_creation_key on verity_records ((value->>'companyId'), (value->>'creationKey')) where kind='challenge'`;
 await sql`create index if not exists verity_indexer_contract_block on verity_indexer_events(chain_id, contract_address, block_number)`;
 await sql.end();
 console.log("Supabase Postgres migrations applied");

@@ -47,4 +47,14 @@ npm run dev:indexer
 npm run dev:web
 ```
 
-Manually exercise: Privy login → local company account → private grader preflight → factory-funded escrow → confirmed indexer listing → verified payout-wallet submission → fresh E2B grade → exact threshold check → EIP-712 finalize and payout/no-payout → confirmed indexer projection → UI/API final state. Also exercise timeout/invalid no-payout and post-deadline refund paths, worker retries, duplicate callbacks, nonce replay, and indexer restart/idempotency. Record real transaction hashes, E2B sandbox IDs, and final Supabase rows without recording secrets.
+For the automated real-provider path, supply a short-lived real Privy company access token and two funded Monad Testnet test accounts outside the repository:
+
+```bash
+VERITY_RUN_PROVIDER_E2E=true \
+E2E_PRIVY_ACCESS_TOKEN=... \
+E2E_COMPANY_PRIVATE_KEY=... \
+E2E_SOLVER_PRIVATE_KEY=... \
+node --env-file=.env --test test/e2e/provider-flow.test.mjs
+```
+
+The test executes company sign-in → private grader preflight → factory funding → confirmed index discovery → wallet-required real source-file submission → fresh E2B grading → failing/no-payout, timeout, grader-error, duplicate/replay negatives → EIP-712 settlement → verified-wallet payout → confirmed frontend/API state. It never creates test auth bypasses or records tokens, private keys, grader feedback, sandbox IDs, private logs, or storage paths.
