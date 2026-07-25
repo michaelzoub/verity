@@ -10,7 +10,7 @@ process.env.NEXT_PUBLIC_PRIVY_APP_ID = companyAuthEnabled ? process.env.PRIVY_AP
 process.env.NEXT_PUBLIC_PRIVY_AUTH_ENABLED = companyAuthEnabled ? "true" : "false";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@verity/domain", "@verity/fixtures"],
+  transpilePackages: ["@verity/domain"],
   outputFileTracingRoot: new URL("../../", import.meta.url).pathname,
   // App IDs are public identifiers. Keep the server secret server-only.
   env: {

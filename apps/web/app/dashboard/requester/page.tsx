@@ -1,2 +1,5 @@
-import { SiteHeader } from "@/components/site-header"; import { challenges } from "@verity/fixtures";
-export default function RequesterDashboard(){const c=challenges[0];return <main><SiteHeader/><section className="page-head"><span className="eyebrow">Requester dashboard</span><h1>Funded work, at a glance.</h1><p>Track the public lifecycle without exposing private grader configuration.</p></section><section className="metrics"><div><small>Live reward pools</small><strong>7,300 MON</strong></div><div><small>Open challenges</small><strong>3</strong></div><div><small>Finalized submissions</small><strong>19</strong></div></section><section className="table-card"><h2>Active challenges</h2><div className="table-row table-head"><span>Challenge</span><span>Reward</span><span>Usage</span><span>Status</span></div><div className="table-row"><b>{c.title}</b><span>{c.reward}</span><span>{c.submissions} / {c.maxSubmissions}</span><span className="live-dot">Live</span></div></section></main>}
+import { SiteHeader } from "@/components/site-header";
+
+export default function RequesterDashboard() {
+  return <main><SiteHeader /><section className="page-head"><span className="eyebrow">Requester dashboard</span><h1>Funded work, at a glance.</h1><p>Sign in with your company account to view company-owned challenge projections.</p></section></main>;
+}
