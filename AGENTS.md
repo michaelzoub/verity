@@ -32,3 +32,17 @@ npm run lint
 npm test
 npm run test:contracts
 ```
+
+## Architecture contract
+
+Before implementing any feature, read `docs/architecture/README.md`, both versioned flow sources and rendered diagrams, and `docs/architecture/boundaries.md`. These artifacts are normative. Agents must not silently diverge from them. Any necessary flow change must update the diagrams, tests, contracts, OpenAPI, and shared domain types together. Private grader source and hidden test data must never be returned by API or worker responses.
+## Company authentication boundary
+
+- Privy is used only for company/requester authentication.
+- The frontend sends a Privy access token as a bearer token.
+- The API verifies it and derives the local company identity.
+- Client-supplied ownership fields are never trusted.
+- The backend settlement signer is a separate credential.
+- Rewards are released by the smart contract to the payout address stored with the submission.
+- Privy, settlement, contract custody, and x402 credentials must remain separate.
+- Auth contract changes require synchronized OpenAPI, generated clients, tests, and architecture docs.

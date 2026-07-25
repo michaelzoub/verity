@@ -2,7 +2,36 @@
   "name": "verity",
   "private": true,
   "packageManager": "npm@10.9.8",
-  "workspaces": ["apps/*", "packages/*"],
-  "scripts": { "generate": "npm run generate --workspaces --if-present", "dev:mock": "turbo dev --filter=@verity/web", "dev:full": "turbo dev", "dev:web": "npm run dev --workspace=@verity/web", "dev:api": "npm run dev --workspace=@verity/api", "build": "npm run build --workspace=@verity/web", "test": "npm run test --workspaces --if-present", "test:contracts": "cd contracts && forge test", "test:e2e": "echo 'Playwright suite will run once browsers are installed'", "typecheck": "npm run typecheck --workspaces --if-present", "lint": "npm run lint --workspaces --if-present", "artifacts:check": "node scripts/check-artifacts.mjs" },
-  "devDependencies": { "turbo": "^2.5.5", "typescript": "^5.7.3" }
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "generate": "npm run generate --workspaces --if-present",
+    "dev:mock": "MOCK_MODE=true turbo dev --filter=@verity/web",
+    "dev:full": "turbo dev",
+    "dev": "turbo dev",
+    "dev:web": "npm run dev --workspace=@verity/web",
+    "dev:api": "VERITY_DB_FILE=../../.verity/data.json VERITY_OBJECT_DIR=../../.verity/objects npm run dev --workspace=@verity/api",
+    "dev:worker": "VERITY_DB_FILE=../../.verity/data.json VERITY_OBJECT_DIR=../../.verity/objects npm run dev --workspace=@verity/grader-worker",
+    "dev:indexer": "VERITY_DB_FILE=../../.verity/data.json npm run dev --workspace=@verity/indexer",
+    "test:auth": "PRIVY_AUTH_ENABLED=true PRIVY_APP_ID=test PRIVY_APP_SECRET=test PRIVY_VERIFICATION_KEY=test tsx --test apps/api/src/auth.test.ts",
+    "dev:infra": "node scripts/dev-infra.mjs",
+    "db:migrate": "node scripts/db-migrate.mjs",
+    "contracts:deploy:local": "node scripts/deploy-local.mjs",
+    "build": "npm run build --workspace=@verity/web",
+    "test": "npm run test --workspaces --if-present",
+    "test:contracts": "cd contracts && forge test",
+    "test:e2e": "node --test test/e2e/*.test.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "artifacts:check": "node scripts/check-artifacts.mjs"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.5",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "viem": "^2.55.8"
+  }
 }

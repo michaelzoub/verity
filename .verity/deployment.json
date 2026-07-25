@@ -1,0 +1,9 @@
+{
+  "chainId": 31337,
+  "rpcUrl": "http://127.0.0.1:8545",
+  "address": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+  "deploymentBlock": 1,
+  "authorizedBackend": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "abiPath": "artifacts/contracts/ChallengeEscrow.json",
+  "transactionHash": "0x21e51fa4e4f1a7bc2ac063331cbbc3fe76c7efa9665d5dbb3fb36cc184f6616b"
+}

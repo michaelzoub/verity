@@ -4,4 +4,10 @@
 
 The API persists private grader settings and commitment material. `apps/grader-worker` receives a submission plus a private configuration in an isolated runtime and returns only a normalized outcome. The API authenticates that outcome to `ChallengeEscrow`; the contract never makes an HTTP request and never sees grader code or test data.
 
+The worker claim endpoint is opaque: it returns a job and private-object references, not grader source or solution bytes. Only the separately deployed trusted worker is given `VERITY_OBJECT_DIR`; an agent process receives public challenge fields and wallet-signing material only.
+
+The current local sandbox is a defense-in-depth development boundary, not a production-grade hostile-code sandbox. It uses a child process, timeout, output cap, empty `PATH`, and a temporary working directory, but does not yet provide OS/container namespaces, a seccomp profile, resource cgroups, or a network/filesystem policy. Production deployment must add those controls before accepting untrusted grader code.
+
 `apps/indexer` consumes `ChallengeCreated` and `SubmissionFinalized` events and produces marketplace and dashboard projections.
+
+Company authentication is API-only: the API verifies Privy bearer access tokens and persists the Privy subject as the local company external identity. Ownership is derived from that record; request-body company IDs and roles are ignored. Settlement credentials remain separate from Privy credentials.

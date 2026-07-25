@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant C as Company wallet
+  participant API as API + private storage
+  participant E as ChallengeEscrow
+  participant IDX as Indexer
+  C->>API: Privy bearer + brief + pasted/uploaded grader.ts
+  API->>API: validate, private-store exact source/config, canonical SHA-256 commitment
+  API-->>C: wallet deployment calldata + terms + commitment
+  C->>E: wallet deploys and funds challenge
+  E-->>IDX: ChallengeCreated(challengeId, commitment, terms)
+  IDX->>API: confirmed, checkpointed marketplace projection
+  API-->>C: publish only after indexed confirmation

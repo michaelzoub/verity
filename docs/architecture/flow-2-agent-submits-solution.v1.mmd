@@ -1,0 +1,15 @@
+sequenceDiagram
+  participant A as Agent wallet
+  participant API as API
+  participant Q as Queue
+  participant W as Restricted grader worker
+  participant E as ChallengeEscrow
+  participant IDX as Indexer
+  A->>API: request wallet nonce; sign nonce-bound submission
+  API->>API: recover wallet, replay-check nonce, validate/hash/limit/deadline, persist
+  API->>Q: enqueue grading job
+  Q->>W: challenge-specific source + solution
+  W-->>API: authenticated job-bound normalized result only
+  API->>E: backend signs EIP-712 then broadcasts finalize
+  E-->>IDX: SubmissionFinalized
+  IDX->>API: confirmed final settlement projection and payout state
