@@ -364,7 +364,7 @@ function problemErrors(draft: ChallengeDraft): DraftErrors {
   return errors;
 }
 
-function graderErrors(draft: ChallengeDraft, validatedFingerprint?: string): DraftErrors {
+function graderErrors(draft: ChallengeDraft): DraftErrors {
   const errors: DraftErrors = {};
   if (!draft.solverRuntime.trim()) errors.solverRuntime = "Add the public solver runtime.";
   if (!/^(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_.-]+\.(?:ts|js|py)$/.test(draft.solverEntrypoint)) {
@@ -405,9 +405,6 @@ function graderErrors(draft: ChallengeDraft, validatedFingerprint?: string): Dra
   }
   if (draft.solverLanguage !== draft.graderLanguage || draft.solverRuntime !== draft.graderRuntime) {
     errors.graderRuntime = "The current backend requires public and private runtime settings to match.";
-  }
-  if (!Object.keys(errors).length && validatedFingerprint !== validationFingerprint(draft)) {
-    errors.validation = "Validate this exact grader configuration before continuing.";
   }
   return errors;
 }
@@ -461,12 +458,12 @@ export function PostChallengeWizard() {
 
   const errors = useMemo(() => {
     if (step === 1) return problemErrors(draft);
-    if (step === 2) return graderErrors(draft, validatedFingerprint);
+    if (step === 2) return graderErrors(draft);
     if (step === 3) return fundingErrors(draft, wallet);
     return draft.documentationConfirmed
       ? {}
       : { documentationConfirmed: "Confirm the public specification before publishing." };
-  }, [draft, step, validatedFingerprint, wallet]);
+  }, [draft, step, wallet]);
   const canAdvance = Object.keys(errors).length === 0;
   const wide = step === 2 || step === 4;
 
@@ -558,7 +555,7 @@ export function PostChallengeWizard() {
       api.login();
       return;
     }
-    const localErrors = graderErrors(draft, validationFingerprint(draft));
+    const localErrors = graderErrors(draft);
     if (Object.keys(localErrors).length) {
       setTouched((current) => ({
         ...current,
@@ -689,7 +686,6 @@ export function PostChallengeWizard() {
         <WizardProgress
           current={step}
           draft={draft}
-          validated={validatedFingerprint === validationFingerprint(draft)}
           wallet={wallet}
           onSelect={goToStep}
         />
@@ -747,6 +743,7 @@ export function PostChallengeWizard() {
               draft={draft}
               wallet={wallet}
               preflight={preflight}
+              isCurrentValidation={validatedFingerprint === validationFingerprint(draft)}
               error={visibleError("documentationConfirmed")}
               status={publishStatus}
               isPublishing={isPublishing}
@@ -863,7 +860,6 @@ interface GraderStepProps extends CommonStepProps {
 
 function GraderStep({
   draft,
-  errors,
   visibleError,
   touch,
   isValidating,
@@ -1129,11 +1125,13 @@ function GraderStep({
             )}
             {preflight && !isCurrentValidation && (
               <p className="validation-result validation-result--stale">
-                The grader changed after validation. Validate it again to continue.
+                The grader changed after validation. Validate it again before publishing.
               </p>
             )}
-            {errors.validation && !validationError && !isCurrentValidation && (
-              <p className="validation-result validation-result--stale">{errors.validation}</p>
+            {!preflight && !validationError && !isCurrentValidation && (
+              <p className="validation-result validation-result--stale">
+                You can continue now and validate this grader before publishing.
+              </p>
             )}
             {!isAuthenticated ? (
               <button type="button" className="button sealed-button" onClick={onLogin}>
@@ -1265,6 +1263,7 @@ interface ConfirmStepProps {
   draft: ChallengeDraft;
   wallet: string;
   preflight?: PreflightResult;
+  isCurrentValidation: boolean;
   error?: string;
   status?: string;
   isPublishing: boolean;
@@ -1277,6 +1276,7 @@ function ConfirmStep({
   draft,
   wallet,
   preflight,
+  isCurrentValidation,
   error,
   status,
   isPublishing,
@@ -1326,8 +1326,10 @@ function ConfirmStep({
             <div className="summary-row">
               <dt>Validation</dt>
               <dd className="summary-verified">
-                <CheckCircle2 size={14} aria-hidden="true" />
-                Validated · score {preflight?.validationResult.score ?? "—"}
+                {isCurrentValidation && <CheckCircle2 size={14} aria-hidden="true" />}
+                {isCurrentValidation
+                  ? `Validated · score ${preflight?.validationResult.score ?? "—"}`
+                  : "Required before publishing"}
               </dd>
             </div>
           </Summary>
@@ -1361,11 +1363,16 @@ function ConfirmStep({
             </span>
           </label>
           {error && <FieldError message={error} />}
+          {!isCurrentValidation && (
+            <p className="status-line">
+              Return to step 2 and validate the current grader before publishing.
+            </p>
+          )}
           {status && <p className="status-line">{status}</p>}
           <button
             type="button"
             className="button primary full publish-button"
-            disabled={!draft.documentationConfirmed || isPublishing}
+            disabled={!draft.documentationConfirmed || !isCurrentValidation || isPublishing}
             onClick={onPublish}
           >
             {isPublishing ? (
@@ -1384,19 +1391,17 @@ function ConfirmStep({
 function WizardProgress({
   current,
   draft,
-  validated,
   wallet,
   onSelect,
 }: {
   current: WizardStep;
   draft: ChallengeDraft;
-  validated: boolean;
   wallet: string;
   onSelect: (step: WizardStep) => void;
 }) {
   function complete(step: WizardStep) {
     if (step === 1) return Object.keys(problemErrors(draft)).length === 0;
-    if (step === 2) return Object.keys(graderErrors(draft, validated ? validationFingerprint(draft) : undefined)).length === 0;
+    if (step === 2) return Object.keys(graderErrors(draft)).length === 0;
     if (step === 3) return Object.keys(fundingErrors(draft, wallet)).length === 0;
     return draft.documentationConfirmed;
   }
