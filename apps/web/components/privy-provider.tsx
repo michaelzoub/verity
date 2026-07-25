@@ -1,13 +1,18 @@
 "use client";
 
-import { PrivyProvider } from "@privy-io/react-auth";
+import type { ReactNode } from "react";
 
-// next.config.ts exposes this browser-safe ID only when PRIVY_AUTH_ENABLED=true.
-export const companyAuthEnabled = Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);
+// Browser-safe flags come from next.config.ts. Privy is only loaded when auth is enabled
+// so broken optional wallet deps cannot take down the whole app in mock mode.
+export const companyAuthEnabled =
+  process.env.NEXT_PUBLIC_PRIVY_AUTH_ENABLED === "true" &&
+  Boolean(process.env.NEXT_PUBLIC_PRIVY_APP_ID);
 
-export function CompanyAuthProvider({ children }: { children: React.ReactNode }) {
-  const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
-  // Keeping preview/mock builds usable does not create an alternate auth path: protected actions require a token.
-  if (!companyAuthEnabled || !appId) return <>{children}</>;
-  return <PrivyProvider appId={appId}>{children}</PrivyProvider>;
+export function CompanyAuthProvider({ children }: { children: ReactNode }) {
+  if (!companyAuthEnabled) return <>{children}</>;
+
+  // Lazy require keeps @privy-io out of the default client graph.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { LiveCompanyAuthProvider } = require("./privy-provider-live") as typeof import("./privy-provider-live");
+  return <LiveCompanyAuthProvider>{children}</LiveCompanyAuthProvider>;
 }

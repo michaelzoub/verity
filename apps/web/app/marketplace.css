@@ -14,56 +14,229 @@ main:has(.marketplace-tools) .page-head p {
 .marketplace-tools {
   max-width: 1120px;
   margin: 0 auto;
-  padding: 0 24px 0;
-  display: grid;
-  gap: 12px;
-}
-
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 0 14px;
-  background: #fff;
-  min-height: 46px;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.search-bar:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
-}
-
-.search-bar svg {
-  color: var(--muted);
-  flex-shrink: 0;
-}
-
-.search-bar input {
-  border: 0;
-  outline: none;
-  background: transparent;
-  width: 100%;
-  padding: 12px 0;
-  font-size: 14px;
-  color: var(--ink);
-}
-
-.search-bar input::placeholder {
-  color: #9a9d97;
+  padding: 0 24px;
 }
 
 .marketplace-tools .filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   max-width: none;
   margin: 0;
   padding: 0;
 }
 
+.marketplace-tools .filters button,
+.filter-search {
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  margin: 0;
+}
+
+.filter-search {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  flex: 0 0 132px;
+  gap: 7px;
+  width: 132px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--muted);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.filter-search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.filter-search svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Resets the app-wide `input, textarea` block from supplement.css, which adds
+   margin-top and padding that knock this control out of vertical alignment. */
+.filter-search input {
+  display: block;
+  box-sizing: border-box;
+  height: 20px;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.filter-search input::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
 main:has(.marketplace-tools) .grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
   padding-top: 8px;
   padding-bottom: 56px;
+}
+
+.challenge-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 0.025),
+    0 8px 24px oklch(0 0 0 / 0.025);
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.challenge-card:hover {
+  border-color: color-mix(in srgb, var(--ink) 28%, var(--line));
+  transform: translateY(-2px);
+}
+
+.challenge-card:active {
+  transform: scale(0.98);
+}
+
+.challenge-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  outline-offset: 3px;
+}
+
+.challenge-card__top,
+.challenge-card__tags,
+.challenge-card__status,
+.challenge-card__footer,
+.challenge-card__footer span,
+.challenge-card__private {
+  display: flex;
+  align-items: center;
+}
+
+.challenge-card__top {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.challenge-card__tags {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.challenge-card__tags .tag {
+  min-height: 28px;
+}
+
+.challenge-card__private {
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.challenge-card__status {
+  flex-shrink: 0;
+  gap: 7px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+
+.challenge-card__status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.challenge-card__heading {
+  margin-top: 16px;
+}
+
+.challenge-card__heading h3 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.3;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+/* `.challenge-card p` in globals.css reserves 59px for the old description slot. */
+.challenge-card__heading p {
+  min-height: 0;
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.challenge-card__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 18px 0 0;
+}
+
+.challenge-card__metrics div {
+  min-width: 0;
+}
+
+.challenge-card__metrics dt {
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.challenge-card__metrics dd {
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.challenge-card__footer {
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.challenge-card__footer span {
+  gap: 6px;
 }
 
 .marketplace-empty {
@@ -80,5 +253,37 @@ main:has(.marketplace-tools) .grid {
 
   .marketplace-tools {
     padding: 0 16px;
+  }
+
+  main:has(.marketplace-tools) .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .challenge-card {
+    min-height: 250px;
+  }
+
+  .challenge-card__metrics {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 430px) {
+  .challenge-card__top {
+    align-items: flex-start;
+  }
+
+  .challenge-card__metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .challenge-card__metrics div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .challenge-card__footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
   }
 }
