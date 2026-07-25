@@ -34,17 +34,7 @@ export function MarketplaceBrowse({ challenges }: MarketplaceBrowseProps) {
   return (
     <>
       <section className="marketplace-tools">
-        <label className="search-bar">
-          <Search size={16} aria-hidden="true" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search challenges"
-            aria-label="Search challenges"
-          />
-        </label>
-        <div className="filters">
+        <div className="filters" aria-label="Filter challenges">
           {FILTERS.map((f) => (
             <button
               key={f}
@@ -55,6 +45,16 @@ export function MarketplaceBrowse({ challenges }: MarketplaceBrowseProps) {
               {f}
             </button>
           ))}
+          <label className="filter-search">
+            <Search size={14} aria-hidden="true" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search"
+              aria-label="Search challenges"
+            />
+          </label>
         </div>
       </section>
       <section className="grid">

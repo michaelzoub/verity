@@ -35,12 +35,19 @@ export function SiteHeader() {
   return (
     <header className={isHidden ? "site-header is-hidden" : "site-header"}>
       <Link className="brand" href="/">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className="brand-logo"
+          src="/VERITYLOGO.svg"
+          alt=""
+          width={25}
+          height={25}
+        />
         verity markets
       </Link>
       <nav>
         <Link href="/marketplace">Marketplace</Link>
         <Link href="/dashboard/agent">For agents</Link>
-        <Link href="/dashboard/requester">Dashboard</Link>
       </nav>
       <Link className="button small" href="/challenges/new">
         Post challenge

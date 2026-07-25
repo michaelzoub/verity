@@ -1,21 +1,42 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
+import { companyAuthEnabled } from "@/components/privy-provider";
 
-export function useCompanyApi() {
-  const { authenticated, getAccessToken, login } = usePrivy();
+interface CompanyApi {
+  authenticated: boolean;
+  login: () => void;
+  request: (path: string, init?: RequestInit) => Promise<unknown>;
+}
+
+/**
+ * Local stand-in when Privy is disabled (PRIVY_AUTH_ENABLED=false).
+ * Lets companies exercise the challenge form in development without
+ * APP_ID / APP_SECRET. Does not mint real ownership or settlement authority.
+ */
+function mockCompanyApi(): CompanyApi {
   return {
-    authenticated,
-    login,
-    async request(path: string, init: RequestInit = {}) {
-      const token = await getAccessToken();
-      if (!token) throw new Error("Sign in with Privy before managing company challenges.");
-      const headers = new Headers(init.headers);
-      headers.set("Authorization", `Bearer ${token}`);
-      headers.set("Content-Type", "application/json");
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"}${path}`, { ...init, headers });
-      if (!response.ok) throw new Error((await response.json().catch(() => ({ error: "request_failed" }))).error ?? "request_failed");
-      return response.json();
+    authenticated: true,
+    login: () => undefined,
+    async request(_path, init = {}) {
+      // Soft-succeed so the create-challenge UX can be walked locally.
+      // Real persistence still requires the API + Privy when auth is enabled.
+      if (typeof init.body === "string") {
+        try {
+          JSON.parse(init.body);
+        } catch {
+          throw new Error("Invalid challenge payload.");
+        }
+      }
+      return { ok: true, mode: "mock" };
     },
   };
+}
+
+export function useCompanyApi(): CompanyApi {
+  if (!companyAuthEnabled) return mockCompanyApi();
+
+  // Lazy require keeps @privy-io out of marketplace/home compiles.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { useLiveCompanyApi } = require("./company-auth-live") as typeof import("./company-auth-live");
+  return useLiveCompanyApi();
 }

@@ -4,6 +4,7 @@ import "./globals.css";
 import "./supplement.css";
 import "./landing.css";
 import "./marketplace.css";
+import "./post.css";
 import { CompanyAuthProvider } from "@/components/privy-provider";
 
 const inter = Inter({
