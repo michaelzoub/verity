@@ -19,6 +19,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tr46": "^0.0.3",
+    "viem": "^2.55.8",
     "webidl-conversions": "^3.0.1",
     "whatwg-url": "^5.0.0",
     "wrappy": "^1.0.2"
