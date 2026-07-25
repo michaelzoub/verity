@@ -1,6 +1,148 @@
 {
   "openapi": "3.1.0",
-  "info": { "title": "Verity API", "version": "0.3.0" },
-  "components": { "securitySchemes": { "privyBearer": { "type": "http", "scheme": "bearer", "bearerFormat": "Privy access token" } }, "schemas": { "ScoreSchema": { "type": "object", "required": ["passingScore", "scoreScale"], "properties": { "passingScore": { "type": "string", "pattern": "^(0|[1-9]\\d*)(\\.\\d+)?$" }, "minScore": { "type": "string" }, "maxScore": { "type": "string" }, "scoreScale": { "type": "integer", "description": "Positive power-of-ten multiplier for exact Solidity integer settlement." }, "scoreUnit": { "type": "string" } } }, "PrivateGraderInput": { "type": "object", "required": ["language", "runtimeVersion", "entrypoint"], "properties": { "language": { "enum": ["typescript", "javascript", "python"] }, "runtimeVersion": { "type": "string" }, "entrypoint": { "type": "string" }, "graderSource": { "type": "string", "description": "Pasted private source; never returned." }, "graderSourceBase64": { "type": "string", "description": "Private uploaded source bytes; never returned." }, "graderFileName": { "type": "string" }, "graderConfig": { "type": "object" } } } } },
-  "paths": { "/api/challenges": { "post": { "summary": "Create a company-owned challenge with private grader source", "security": [{ "privyBearer": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "allOf": [{ "$ref": "#/components/schemas/PrivateGraderInput" }, { "type": "object", "required": ["title", "description", "tags", "agentContext", "rewardWei", "maxSubmissions", "deadline", "chainId", "scoring"], "properties": { "title": { "type": "string" }, "description": { "type": "string" }, "tags": { "type": "array", "items": { "type": "string" } }, "agentContext": { "type": "string" }, "rewardWei": { "type": "string" }, "maxSubmissions": { "type": "integer" }, "deadline": { "type": "string", "format": "date-time" }, "chainId": { "type": "integer" }, "scoring": { "$ref": "#/components/schemas/ScoreSchema" } } }] } }, "multipart/form-data": { "schema": { "type": "object", "properties": { "graderFile": { "type": "string", "format": "binary" } } } } } }, "responses": { "201": { "description": "Created; the response excludes private grader source and config." }, "400": { "description": "Invalid score schema, source, entrypoint, encoding, or upload." } } } }, "/api/challenges/{challengeId}": { "get": { "summary": "Public challenge projection; excludes grader source, config, and runtime details", "parameters": [{ "name": "challengeId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Challenge" } } } } }
+  "info": { "title": "Verity API", "version": "1.0.0" },
+  "components": {
+    "securitySchemes": { "privyBearer": { "type": "http", "scheme": "bearer", "bearerFormat": "Privy access token" } },
+    "schemas": {
+      "Challenge": {
+        "type": "object",
+        "required": ["id", "title", "description", "tags", "reward", "passingScore", "scoreScale", "submissions", "maxSubmissions", "deadline", "requester", "status", "context", "format", "graderType", "chainId"],
+        "properties": {
+          "id": { "type": "string" }, "title": { "type": "string" }, "description": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } }, "reward": { "type": "string" },
+          "passingScore": { "type": "string" }, "minScore": { "type": "string" }, "maxScore": { "type": "string" },
+          "scoreScale": { "type": "integer" }, "scoreUnit": { "type": "string" }, "submissions": { "type": "integer" },
+          "maxSubmissions": { "type": "integer" }, "deadline": { "type": "string", "format": "date-time" },
+          "requester": { "type": "string" }, "status": { "enum": ["funding", "live", "settled", "expired", "refunded"] },
+          "context": { "type": "string" }, "format": { "type": "string" }, "graderType": { "type": "string" },
+          "chainId": { "type": "integer", "enum": [10143] }, "contractAddress": { "type": "string" },
+          "graderCommitment": { "type": "string" }, "transactionHash": { "type": "string" },
+          "refundedTransactionHash": { "type": "string" },
+          "requiredFunctions": { "type": "array", "items": { "$ref": "#/components/schemas/RequiredFunction" } },
+          "submissionSchema": { "type": "object" },
+          "publicSpec": { "$ref": "#/components/schemas/PublicChallengeSpec" }
+        }
+      },
+      "Submission": {
+        "type": "object",
+        "required": ["id", "challengeId", "agentWallet", "payoutAddress", "submissionHash", "status", "createdAt", "traceTrust"],
+        "properties": {
+          "id": { "type": "string" }, "challengeId": { "type": "string" }, "agentWallet": { "type": "string" },
+          "payoutAddress": { "type": "string" }, "submissionHash": { "type": "string" },
+          "status": { "enum": ["UPLOADED", "QUEUED", "GRADING", "GRADED", "SETTLEMENT_PENDING", "FINALIZED", "PAID", "NO_PAYOUT", "FAILED", "UNEVALUABLE", "GRADER_ERROR", "TIMEOUT"] },
+          "createdAt": { "type": "string", "format": "date-time" }, "score": { "type": "string" },
+          "scoreScaled": { "type": "string" }, "outcome": { "type": "string" }, "transactionHash": { "type": "string" },
+          "gradingSandboxId": { "type": "string" },
+          "failureReason": { "type": "string" }, "traceTrust": { "enum": ["none", "platform-hmac"] },
+          "platformExecutionId": { "type": "string" }, "graderResult": { "$ref": "#/components/schemas/GraderResult" }
+        }
+      },
+      "ScoreSchema": {
+        "type": "object", "required": ["passingScore", "scoreScale"],
+        "properties": { "passingScore": { "type": "string" }, "minScore": { "type": "string" }, "maxScore": { "type": "string" }, "scoreScale": { "type": "integer" }, "scoreUnit": { "type": "string" } }
+      },
+      "GraderResult": {
+        "type": "object", "required": ["score", "feedback", "metadata"],
+        "properties": { "score": { "type": "string" }, "passed": { "type": "boolean" }, "feedback": { "type": "string" }, "metadata": { "type": "object" } }
+      },
+      "RequiredFunction": {
+        "type": "object", "required": ["name", "argumentsSchema", "outputSchema", "required"],
+        "properties": { "name": { "type": "string" }, "argumentsSchema": { "type": "object" }, "outputSchema": { "type": "object" }, "required": { "type": "boolean" }, "minCalls": { "type": "integer" }, "maxCalls": { "type": "integer" }, "order": { "type": "object" } }
+      },
+      "PublicFunction": { "type": "object", "required": ["name", "inputSchema", "outputSchema"], "properties": { "name": { "type": "string" }, "inputSchema": { "type": "object" }, "outputSchema": { "type": "object" } } },
+      "PublicExample": { "type": "object", "required": ["functionName", "input", "output"], "properties": { "functionName": { "type": "string" }, "input": {}, "output": {} } },
+      "PublicChallengeSpec": { "type": "object", "required": ["problemDescription", "successCriteria", "language", "runtimeVersion", "entrypoint", "requiredFunctions", "submissionFormat", "allowedDependencies", "scoring", "examples", "documentationConfirmed"], "properties": { "problemDescription": { "type": "string" }, "successCriteria": { "type": "string" }, "language": { "enum": ["typescript", "javascript", "python"] }, "runtimeVersion": { "type": "string" }, "entrypoint": { "type": "string" }, "requiredFunctions": { "type": "array", "items": { "$ref": "#/components/schemas/PublicFunction" } }, "submissionFormat": { "type": "string" }, "allowedDependencies": { "type": "array", "items": { "type": "string" } }, "scoring": { "$ref": "#/components/schemas/ScoreSchema" }, "examples": { "type": "array", "items": { "$ref": "#/components/schemas/PublicExample" } }, "starterCode": { "type": "string" }, "documentationConfirmed": { "const": true } } },
+      "AgentSubmission": {
+        "type": "object", "required": ["code", "language", "finalOutput"],
+        "properties": { "code": { "type": "string" }, "language": { "enum": ["typescript", "javascript", "python"] }, "finalOutput": {}, "artifacts": { "type": "array" } }, "additionalProperties": false
+      },
+      "GraderPreflight": {
+        "type": "object", "required": ["language", "runtimeVersion", "scoring"],
+        "properties": {
+          "language": { "enum": ["typescript", "javascript", "python"] }, "runtimeVersion": { "type": "string" },
+          "entrypoint": { "enum": ["default", "grade"] }, "graderSource": { "type": "string", "writeOnly": true },
+          "graderSourceBase64": { "type": "string", "writeOnly": true }, "graderFileName": { "type": "string" },
+          "graderConfig": { "type": "object" }, "dependencies": { "type": "array", "items": { "type": "string" } },
+          "validationSample": { "$ref": "#/components/schemas/AgentSubmission" },
+          "requiredFunctions": { "type": "array", "items": { "$ref": "#/components/schemas/RequiredFunction" } },
+          "submissionSchema": { "type": "object" }, "scoring": { "$ref": "#/components/schemas/ScoreSchema" }
+        }
+      },
+      "CreateChallenge": {
+        "allOf": [
+          { "$ref": "#/components/schemas/GraderPreflight" },
+          {
+            "type": "object",
+            "required": ["title", "description", "tags", "agentContext", "rewardWei", "maxSubmissions", "deadline", "chainId", "publicSpec"],
+            "properties": {
+              "title": { "type": "string" }, "description": { "type": "string" },
+              "tags": { "type": "array", "items": { "type": "string" } }, "agentContext": { "type": "string" },
+              "rewardWei": { "type": "string" }, "maxSubmissions": { "type": "integer" },
+              "deadline": { "type": "string", "format": "date-time" }, "chainId": { "type": "integer", "enum": [10143] }, "publicSpec": { "$ref": "#/components/schemas/PublicChallengeSpec" }
+            }
+          }
+        ]
+      },
+      "SignedSubmission": {
+        "type": "object", "required": ["payload", "nonce", "signature"],
+        "properties": {
+          "payload": { "$ref": "#/components/schemas/AgentSubmission" },
+          "nonce": { "type": "string" }, "signature": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": { "get": { "responses": { "200": { "description": "Real provider health" } } } },
+    "/v1/auth/me": { "get": { "security": [{ "privyBearer": [] }], "responses": { "200": { "description": "Local company identity" } } } },
+    "/api/graders/preflight": {
+      "post": { "security": [{ "privyBearer": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GraderPreflight" } } } }, "responses": { "200": { "description": "Validated in fresh E2B sandbox" } } }
+    },
+    "/api/challenges": {
+      "get": { "responses": { "200": { "description": "Indexed challenges", "content": { "application/json": { "schema": { "type": "object", "required": ["challenges"], "properties": { "challenges": { "type": "array", "items": { "$ref": "#/components/schemas/Challenge" } } } } } } } } },
+      "post": {
+        "security": [{ "privyBearer": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateChallenge" } } } },
+        "responses": { "201": { "description": "Challenge and factory transaction", "content": { "application/json": { "schema": { "type": "object", "properties": { "challenge": { "$ref": "#/components/schemas/Challenge" }, "walletTransaction": { "type": "object", "required": ["to", "data", "value", "chainId"], "properties": { "to": { "type": "string" }, "data": { "type": "string" }, "value": { "type": "string" }, "chainId": { "type": "integer" } } } } } } } } }
+      }
+    },
+    "/api/challenges/{challengeId}": {
+      "parameters": [{ "name": "challengeId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": { "responses": { "200": { "description": "Indexed challenge", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Challenge" } } } } } }
+    },
+    "/api/challenges/{challengeId}/starter-bundle": {
+      "parameters": [{ "name": "challengeId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": { "responses": { "200": { "description": "Public starter bundle only", "content": { "application/json": { "schema": { "type": "object", "required": ["files"], "properties": { "files": { "type": "object", "additionalProperties": { "type": "string" } } } } } } } } }
+    },
+    "/api/challenges/{challengeId}/test-submission": {
+      "parameters": [{ "name": "challengeId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": { "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["code", "language"], "properties": { "code": { "type": "string" }, "language": { "enum": ["typescript", "javascript", "python"] } } } } } }, "responses": { "200": { "description": "Public cases only", "content": { "application/json": { "schema": { "type": "object", "properties": { "passed": { "type": "boolean" }, "results": { "type": "array" } } } } } } } }
+    },
+    "/api/company/challenges": {
+      "get": { "security": [{ "privyBearer": [] }], "responses": { "200": { "description": "Company challenges", "content": { "application/json": { "schema": { "type": "object", "required": ["challenges"], "properties": { "challenges": { "type": "array", "items": { "$ref": "#/components/schemas/Challenge" } } } } } } } } }
+    },
+    "/api/challenges/{challengeId}/funding-confirmed": {
+      "parameters": [{ "name": "challengeId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": { "security": [{ "privyBearer": [] }], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["transactionHash"], "properties": { "transactionHash": { "type": "string" } } } } }, "responses": { "202": { "description": "Deployment verified" } } } }
+    },
+    "/api/challenges/{challengeId}/wallet-nonces": {
+      "parameters": [{ "name": "challengeId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": { "responses": { "201": { "description": "Wallet verification message", "content": { "application/json": { "schema": { "type": "object", "required": ["nonce", "expiresAt", "message", "requiredCallValidation"], "properties": { "nonce": { "type": "string" }, "expiresAt": { "type": "string" }, "message": { "type": "string" }, "requiredCallValidation": { "type": "string" } } } } } } } }
+    },
+    "/api/challenges/{challengeId}/refund-transaction": {
+      "parameters": [{ "name": "challengeId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "security": [{ "privyBearer": [] }],
+        "responses": { "200": { "description": "Expired escrow refund transaction", "content": { "application/json": { "schema": { "type": "object", "required": ["walletTransaction"], "properties": { "walletTransaction": { "type": "object", "required": ["to", "data", "value", "chainId"], "properties": { "to": { "type": "string" }, "data": { "type": "string" }, "value": { "type": "string" }, "chainId": { "type": "integer" } } } } } } } } }
+      }
+    },
+    "/api/challenges/{challengeId}/submissions": {
+      "parameters": [{ "name": "challengeId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": { "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SignedSubmission" } } } }, "responses": { "202": { "description": "Queued", "content": { "application/json": { "schema": { "type": "object", "required": ["submission"], "properties": { "submission": { "$ref": "#/components/schemas/Submission" } } } } } } } }
+    },
+    "/api/submissions/{submissionId}": {
+      "parameters": [{ "name": "submissionId", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": { "responses": { "200": { "description": "Submission projection", "content": { "application/json": { "schema": { "type": "object", "required": ["submission"], "properties": { "submission": { "$ref": "#/components/schemas/Submission" } } } } } } } }
+    }
+  }
 }

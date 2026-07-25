@@ -47,3 +47,8 @@ Before implementing any feature, read `docs/architecture/README.md`, both versio
 - Privy, settlement, contract custody, and x402 credentials must remain separate.
 - Auth contract changes require synchronized OpenAPI, generated clients, tests, and architecture docs.
 - Do not remove or bypass the Privy company sign-in button or bearer-token integration in `apps/web`; company challenge creation and management must remain available through Privy when company auth is enabled.
+
+## Provider-backed development
+
+The manual development path is production-capable: Supabase Postgres/Storage, Privy server verification, E2B sandboxes, Monad Testnet, Foundry keystores, and the shared worker/indexer paths only. Do not restore JSON persistence, filesystem object storage, Anvil, mock events, simulated settlement, disabled Privy auth, or host-process grading. Before claiming a provider-backed change is complete, run `npm run services:check` against real credentials and exercise the README golden path.
+E2B grader templates are versioned under `templates/verity-grader-*`; build them with `npm run e2b:templates:build` and store only real provider IDs in `E2B_TEMPLATE_TS`, `E2B_TEMPLATE_JS`, and `E2B_TEMPLATE_PYTHON`. Never invent IDs or fall back to host-process grading.

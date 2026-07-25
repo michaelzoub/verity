@@ -1,12 +1,24 @@
 sequenceDiagram
-  participant C as Company wallet
-  participant API as API + private storage
-  participant E as ChallengeEscrow
+  participant P as Privy
+  participant C as Company + funding wallet
+  participant API as API + Supabase
+  participant W as E2B preflight worker
+  participant F as ChallengeFactory
+  participant E as Per-challenge escrow
   participant IDX as Indexer
-  C->>API: Privy bearer + brief + pasted/uploaded TS/JS/Python grader
-  API->>API: validate source, language/runtime/entrypoint + score schema; private-store bytes/config; canonical SHA-256 commitment
-  API-->>C: wallet deployment calldata + terms + commitment
-  C->>E: wallet deploys and funds challenge
+  C->>P: Company login
+  P-->>C: Access token
+  C->>API: Privy bearer + public specification + private TS/JS/Python grader
+  API->>W: Fresh E2B preflight and public starter/example test
+  W-->>API: Strict validated GraderResult
+  API->>API: Require complete public spec, confirmation, passing preflight/test; private-store immutable grader
+  API-->>C: Factory calldata + exact reward value
+  C->>F: createChallenge and fund reward
+  F->>E: deploy escrow with immutable company requester
   E-->>IDX: ChallengeCreated(challengeId, commitment, terms)
-  IDX->>API: confirmed, checkpointed marketplace projection
-  API-->>C: publish only after indexed confirmation
+  IDX->>API: Confirmed checkpointed live projection
+  API-->>C: Publish only after indexed confirmation
+  alt No passing payout before deadline
+    C->>E: refundExpired after deadline
+    E-->>IDX: ChallengeRefunded to immutable company wallet
+  end

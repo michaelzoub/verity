@@ -1,20 +1,50 @@
 # Verity
 
-Monad proof-of-completion marketplace. The normative flows are in [docs/architecture/README.md](docs/architecture/README.md). In real mode the API stores the private grader and issues deployment calldata; the company wallet deploys and funds the escrow. The listing becomes visible only after the indexer confirms `ChallengeCreated`. Agent wallet signatures create replay-protected sessions for submissions, and only confirmed `SubmissionFinalized` events can make a submission final or paid.
+Monad Testnet proof-of-completion marketplace. The normative provider-backed flows are in [docs/architecture/README.md](docs/architecture/README.md).
 
-## Run
+## Provider-backed development
+
+There is one development and production-capable path: Supabase Postgres/Storage, Privy company authentication, fresh E2B sandboxes, Monad Testnet, per-challenge escrows, and the shared worker/indexer. Anvil, JSON persistence, filesystem object storage, disabled authentication, fixture pages, and host-process grading are not supported.
+
+Copy `.env.example` to `.env` and supply every value. Create the four private Supabase buckets, then run:
 
 ```bash
 npm install
-npm run dev:web
+npm run db:migrate
+npm run generate
 npm run typecheck
 npm test
 npm run test:contracts
-npm run test:e2e
-
-The E2E harness uses Foundry Anvil and starts the API, trusted grader worker, indexer, and a separate submission-agent process. The agent is intentionally given only the public challenge response and its wallet key; private object storage and grader configuration are mounted only into the worker. Set `VERITY_E2E_KEEP_LOGS=true` to retain child-process logs when diagnosing a failure.
+npm run artifacts:check
+npm run services:check
 ```
 
-Copy `.env.example` to `.env`. Real mode needs `RPC_URL`, `CHAIN_ID`, `SETTLEMENT_PRIVATE_KEY`, `WORKER_SHARED_SECRET`, `PRIVY_*`, durable database/object-store/queue endpoints, and a running API, worker, and indexer. `CHALLENGE_ESCROW_ADDRESS` is informational: each funded challenge has its own escrow address, captured from the company's confirmed deployment transaction.
+## Factory deployment
 
-For local development, start Anvil with `npm run dev:infra`, run `npm run contracts:deploy:local` to verify a real configured deployment, then start `npm run dev:api`, `npm run dev:worker`, and `npm run dev:indexer`. The worker has no RPC or settlement credential. `npm run artifacts:check` is suitable for CI and verifies ABI/OpenAPI artifacts are present.
+Use a funded Monad Testnet deployment account held in a Foundry keystore; do not put its private key in the repository. Set its non-secret keystore alias as `DEPLOYER_ACCOUNT`. The settlement signer is a separate credential configured as `SETTLEMENT_PRIVATE_KEY`; its public address is derived at runtime.
+
+```bash
+npm run contracts:build
+npm run contracts:deploy:monad-testnet
+```
+
+Set `CHALLENGE_FACTORY_ADDRESS` and `CONTRACT_DEPLOYMENT_BLOCK` from the receipt, then verify source and deployment:
+
+```bash
+npm run contracts:verify:source
+npm run contracts:verify:deployment
+npm run services:check
+```
+
+The source-verification command follows the [official Monad Foundry verification flow](https://docs.monad.xyz/guides/verify-smart-contract/foundry).
+
+## Run and verify the golden path
+
+```bash
+npm run dev:api
+npm run dev:worker
+npm run dev:indexer
+npm run dev:web
+```
+
+Manually exercise: Privy login → local company account → private grader preflight → factory-funded escrow → confirmed indexer listing → verified payout-wallet submission → fresh E2B grade → exact threshold check → EIP-712 finalize and payout/no-payout → confirmed indexer projection → UI/API final state. Also exercise timeout/invalid no-payout and post-deadline refund paths, worker retries, duplicate callbacks, nonce replay, and indexer restart/idempotency. Record real transaction hashes, E2B sandbox IDs, and final Supabase rows without recording secrets.

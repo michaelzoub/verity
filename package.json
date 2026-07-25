@@ -7,18 +7,24 @@
     "packages/*"
   ],
   "scripts": {
-    "generate": "npm run generate --workspaces --if-present",
-    "dev:mock": "MOCK_MODE=true turbo dev --filter=@verity/web",
+    "generate": "npm run contracts:artifacts && npm run generate:api-client",
+    "generate:api-client": "openapi-typescript artifacts/openapi/openapi.json -o packages/sdk/src/generated.ts",
     "dev:full": "turbo dev",
     "dev": "turbo dev",
     "dev:web": "npm run dev --workspace=@verity/web",
-    "dev:api": "VERITY_DB_FILE=../../.verity/data.json VERITY_OBJECT_DIR=../../.verity/objects npm run dev --workspace=@verity/api",
-    "dev:worker": "VERITY_DB_FILE=../../.verity/data.json VERITY_OBJECT_DIR=../../.verity/objects npm run dev --workspace=@verity/grader-worker",
-    "dev:indexer": "VERITY_DB_FILE=../../.verity/data.json npm run dev --workspace=@verity/indexer",
-    "test:auth": "PRIVY_AUTH_ENABLED=true PRIVY_APP_ID=test PRIVY_APP_SECRET=test PRIVY_VERIFICATION_KEY=test tsx --test apps/api/src/auth.test.ts",
-    "dev:infra": "node scripts/dev-infra.mjs",
-    "db:migrate": "node scripts/db-migrate.mjs",
-    "contracts:deploy:local": "node scripts/deploy-local.mjs",
+    "dev:api": "npm run dev --workspace=@verity/api",
+    "dev:worker": "npm run dev --workspace=@verity/grader-worker",
+    "dev:indexer": "npm run dev --workspace=@verity/indexer",
+    "test:auth": "PRIVY_APP_ID=test PRIVY_APP_SECRET=test node --import tsx --test apps/api/src/auth.test.ts",
+    "db:migrate": "node --env-file=.env scripts/db-migrate.mjs",
+    "services:check": "node --env-file=.env scripts/services-check.mjs",
+    "e2b:templates:build": "node --env-file=.env scripts/e2b-templates-build.mjs",
+    "contracts:build": "cd contracts && forge build",
+    "contracts:artifacts": "npm run contracts:build && node scripts/generate-contract-artifacts.mjs",
+    "contracts:test": "cd contracts && forge test",
+    "contracts:deploy:monad-testnet": "node --env-file=.env scripts/deploy-monad-testnet.mjs",
+    "contracts:verify:source": "node --env-file=.env scripts/verify-contract-source.mjs",
+    "contracts:verify:deployment": "node --env-file=.env scripts/verify-deployment.mjs",
     "build": "npm run build --workspace=@verity/web",
     "test": "npm run test --workspaces --if-present",
     "test:contracts": "cd contracts && forge test",
@@ -28,10 +34,14 @@
     "artifacts:check": "node scripts/check-artifacts.mjs"
   },
   "devDependencies": {
+    "@e2b/cli": "^2.15.1",
+    "@mermaid-js/mermaid-cli": "^11.16.0",
+    "openapi-typescript": "^7.13.0",
     "turbo": "^2.5.5",
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "e2b": "^2.36.0",
     "viem": "^2.55.8"
   }
 }

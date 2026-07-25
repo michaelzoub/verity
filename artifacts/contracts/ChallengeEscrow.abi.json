@@ -1,1 +1,537 @@
-{"abi":[{"type":"constructor","inputs":[{"name":"_challengeId","type":"bytes32","internalType":"bytes32"},{"name":"_passingScore","type":"uint256","internalType":"uint256"},{"name":"_maxSubmissions","type":"uint32","internalType":"uint32"},{"name":"_deadline","type":"uint64","internalType":"uint64"},{"name":"_authorizedBackend","type":"address","internalType":"address"},{"name":"_graderCommitment","type":"bytes32","internalType":"bytes32"},{"name":"_graderVersion","type":"uint32","internalType":"uint32"}],"stateMutability":"payable"},{"type":"function","name":"DOMAIN_SEPARATOR","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"RESULT_TYPEHASH","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"authorizedBackend","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"challengeId","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"deadline","inputs":[],"outputs":[{"name":"","type":"uint64","internalType":"uint64"}],"stateMutability":"view"},{"type":"function","name":"finalize","inputs":[{"name":"submissionId","type":"bytes32","internalType":"bytes32"},{"name":"submissionHash","type":"bytes32","internalType":"bytes32"},{"name":"agent","type":"address","internalType":"address"},{"name":"score","type":"uint256","internalType":"uint256"},{"name":"outcome","type":"bytes32","internalType":"bytes32"},{"name":"nonce","type":"uint256","internalType":"uint256"},{"name":"expiry","type":"uint256","internalType":"uint256"},{"name":"signature","type":"bytes","internalType":"bytes"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"finalized","inputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"graderCommitment","inputs":[],"outputs":[{"name":"","type":"bytes32","internalType":"bytes32"}],"stateMutability":"view"},{"type":"function","name":"graderVersion","inputs":[],"outputs":[{"name":"","type":"uint32","internalType":"uint32"}],"stateMutability":"view"},{"type":"function","name":"maxSubmissions","inputs":[],"outputs":[{"name":"","type":"uint32","internalType":"uint32"}],"stateMutability":"view"},{"type":"function","name":"paid","inputs":[],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"function","name":"passingScore","inputs":[],"outputs":[{"name":"","type":"uint256","internalType":"uint256"}],"stateMutability":"view"},{"type":"function","name":"requester","inputs":[],"outputs":[{"name":"","type":"address","internalType":"address"}],"stateMutability":"view"},{"type":"function","name":"rotateAuthorizedBackend","inputs":[{"name":"backend","type":"address","internalType":"address"}],"outputs":[],"stateMutability":"nonpayable"},{"type":"function","name":"submissions","inputs":[],"outputs":[{"name":"","type":"uint32","internalType":"uint32"}],"stateMutability":"view"},{"type":"function","name":"usedNonces","inputs":[{"name":"","type":"uint256","internalType":"uint256"}],"outputs":[{"name":"","type":"bool","internalType":"bool"}],"stateMutability":"view"},{"type":"event","name":"AuthorizedBackendRotated","inputs":[{"name":"backend","type":"address","indexed":true,"internalType":"address"}],"anonymous":false},{"type":"event","name":"ChallengeCreated","inputs":[{"name":"challengeId","type":"bytes32","indexed":true,"internalType":"bytes32"},{"name":"requester","type":"address","indexed":true,"internalType":"address"},{"name":"reward","type":"uint256","indexed":false,"internalType":"uint256"},{"name":"passingScore","type":"uint256","indexed":false,"internalType":"uint256"},{"name":"deadline","type":"uint64","indexed":false,"internalType":"uint64"},{"name":"maxSubmissions","type":"uint32","indexed":false,"internalType":"uint32"},{"name":"authorizedBackend","type":"address","indexed":false,"internalType":"address"},{"name":"graderCommitment","type":"bytes32","indexed":false,"internalType":"bytes32"}],"anonymous":false},{"type":"event","name":"SubmissionFinalized","inputs":[{"name":"submissionId","type":"bytes32","indexed":true,"internalType":"bytes32"},{"name":"submissionHash","type":"bytes32","indexed":true,"internalType":"bytes32"},{"name":"agent","type":"address","indexed":true,"internalType":"address"},{"name":"score","type":"uint256","indexed":false,"internalType":"uint256"},{"name":"outcome","type":"bytes32","indexed":false,"internalType":"bytes32"},{"name":"paid","type":"bool","indexed":false,"internalType":"bool"},{"name":"nonce","type":"uint256","indexed":false,"internalType":"uint256"}],"anonymous":false},{"type":"error","name":"CapacityReached","inputs":[]},{"type":"error","name":"DuplicateSubmission","inputs":[]},{"type":"error","name":"Expired","inputs":[]},{"type":"error","name":"InvalidAgent","inputs":[]},{"type":"error","name":"InvalidChallenge","inputs":[]},{"type":"error","name":"InvalidExpiry","inputs":[]},{"type":"error","name":"InvalidSignature","inputs":[]},{"type":"error","name":"NonceUsed","inputs":[]},{"type":"error","name":"TransferFailed","inputs":[]},{"type":"error","name":"Unauthorized","inputs":[]}],"bytecode":{"object":"0x610180604052604051610df5380380610df5833981016040819052610023916101fd565b63ffffffff8516158061003f575042846001600160401b031611155b8061005157506001600160a01b038316155b8061005a575034155b15610078576040516392fa6fd360e01b815260040160405180910390fd5b61016087905260a086815263ffffffff86811660c09081526001600160401b03871660e05233610100525f80546001600160a01b0319166001600160a01b03881617905561012085905290831661014052604080517f8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f60208201527f412bf5ce4931cc5c78f5c92e3628f6d15739fcc5a2a1c2a9ee68cd322df0627b918101919091527fc89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6606082015246608082015230928101929092520160408051808303601f19018152828252805160209182012060809081523484529083018990526001600160401b0387169183019190915263ffffffff871660608301526001600160a01b0385169082015260a08101839052339088907f5cbb1c04ca0786ab91154e8f1f2efc76ce2d4d7baa49ce268f43a951a0ff94159060c00160405180910390a350505050505050610287565b805163ffffffff811681146101f8575f5ffd5b919050565b5f5f5f5f5f5f5f60e0888a031215610213575f5ffd5b87516020890151909750955061022b604089016101e5565b60608901519095506001600160401b0381168114610247575f5ffd5b60808901519094506001600160a01b0381168114610263575f5ffd5b60a0890151909350915061027960c089016101e5565b905092959891949750929550565b60805160a05160c05160e05161010051610120516101405161016051610ad46103215f395f8181610226015261054501525f818161034c01526105c401525f8181610277015261059801525f81816102fe015261083e01525f81816101bf0152818161039901526103ed01525f818161017001526104c401525f8181610325015261070501525f81816101ff015261062a0152610ad45ff3fe608060405234801561000f575f5ffd5b50600436106100fb575f3560e01c80634e93aeb8116100935780638aa82455116100635780638aa82455146102e6578063b61e96a5146102f9578063bdf22ab414610320578063c700869b14610347575f5ffd5b80634e93aeb8146102725780635efe1b7e146102995780636717e41c146102af5780637675f878146102d1575f5ffd5b806329dcb0cf116100ce57806329dcb0cf146101ba5780633644e515146101fa578063483e6e3a1461022157806349430bcf14610248575f5ffd5b80630abea268146100ff578063123f8e9f14610136578063158dec251461016b578063295b4e17146101a7575b5f5ffd5b61012161010d366004610972565b60016020525f908152604090205460ff1681565b60405190151581526020015b60405180910390f35b61015d7fefc6bbbf25a4c7abd81a3bbe4cb2791d1407f097f8aedfdcc5ff95c90388eb3281565b60405190815260200161012d565b6101927f000000000000000000000000000000000000000000000000000000000000000081565b60405163ffffffff909116815260200161012d565b5f5461012190600160c01b900460ff1681565b6101e17f000000000000000000000000000000000000000000000000000000000000000081565b60405167ffffffffffffffff909116815260200161012d565b61015d7f000000000000000000000000000000000000000000000000000000000000000081565b61015d7f000000000000000000000000000000000000000000000000000000000000000081565b5f5461025a906001600160a01b031681565b6040516001600160a01b03909116815260200161012d565b61015d7f000000000000000000000000000000000000000000000000000000000000000081565b5f5461019290600160a01b900463ffffffff1681565b6101216102bd366004610972565b60026020525f908152604090205460ff1681565b6102e46102df3660046109a4565b61036e565b005b6102e46102f4366004610a5a565b610833565b61025a7f000000000000000000000000000000000000000000000000000000000000000081565b61015d7f000000000000000000000000000000000000000000000000000000000000000081565b6101927f000000000000000000000000000000000000000000000000000000000000000081565b5f546001600160a01b03163314610397576040516282b42960e81b815260040160405180910390fd5b7f000000000000000000000000000000000000000000000000000000000000000067ffffffffffffffff164211156103e257604051630407b05b60e31b815260040160405180910390fd5b4283108061041957507f000000000000000000000000000000000000000000000000000000000000000067ffffffffffffffff1683115b156104365760405162d36c8560e81b815260040160405180910390fd5b6001600160a01b03871661045d5760405163bebdc75760e01b815260040160405180910390fd5b5f8981526001602052604090205460ff161561048c57604051638daa9e4960e01b815260040160405180910390fd5b5f8481526002602052604090205460ff16156104bb57604051631f6d5aef60e01b815260040160405180910390fd5b5f5463ffffffff7f00000000000000000000000000000000000000000000000000000000000000008116600160a01b909204161061050b57604051628306a160e61b815260040160405180910390fd5b604080517fefc6bbbf25a4c7abd81a3bbe4cb2791d1407f097f8aedfdcc5ff95c90388eb32602082015246918101919091523060608201527f0000000000000000000000000000000000000000000000000000000000000000608082015260a081018a905260c081018990526001600160a01b03881660e0820152610100810187905261012081018690527f000000000000000000000000000000000000000000000000000000000000000061014082015263ffffffff7f00000000000000000000000000000000000000000000000000000000000000001661016082015261018081018590526101a081018490525f906101c00160408051808303601f190181529082905280516020918201205f5461190160f01b928401929092527f000000000000000000000000000000000000000000000000000000000000000060228401526042830181905292506001600160a01b031690610685906062016040516020818303038152906040528051906020012085856108d6565b6001600160a01b0316146106ac57604051638baa579f60e01b815260040160405180910390fd5b5f8a8152600160208181526040808420805460ff19908116851790915589855260029092528320805490911682179055815463ffffffff600160a01b80830482169093011690910263ffffffff60a01b199091161781557f0000000000000000000000000000000000000000000000000000000000000000881080159061073c57505f54600160c01b900460ff16155b905080156107c5575f805460ff60c01b1916600160c01b1781556040516001600160a01b038b169047908381818185875af1925050503d805f811461079c576040519150601f19603f3d011682016040523d82523d5f602084013e6107a1565b606091505b50509050806107c3576040516312171d8360e31b815260040160405180910390fd5b505b886001600160a01b03168a8c7f835418e644f006ae269e2c0d781803b2f70db41d89a8fa48cce224dfb2c384db8b8b868c60405161081e9493929190938452602084019290925215156040830152606082015260800190565b60405180910390a45050505050505050505050565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614158061087257506001600160a01b038116155b1561088f576040516282b42960e81b815260040160405180910390fd5b5f80546001600160a01b0319166001600160a01b038316908117825560405190917fd127d653f0704c54a17ddcf4b18ed6334c8608d7c2b3d96542e50de74107e72e91a250565b5f604182146108e657505f61096b565b8235602084013560408501355f1a601b81101561090b57610908601b82610a73565b90505b604080515f81526020810180835289905260ff831691810191909152606081018490526080810183905260019060a0016020604051602081039080840390855afa15801561095b573d5f5f3e3d5ffd5b5050506020604051035193505050505b9392505050565b5f60208284031215610982575f5ffd5b5035919050565b80356001600160a01b038116811461099f575f5ffd5b919050565b5f5f5f5f5f5f5f5f5f6101008a8c0312156109bd575f5ffd5b8935985060208a013597506109d460408b01610989565b965060608a0135955060808a0135945060a08a0135935060c08a0135925060e08a013567ffffffffffffffff811115610a0b575f5ffd5b8a01601f81018c13610a1b575f5ffd5b803567ffffffffffffffff811115610a31575f5ffd5b8c6020828401011115610a42575f5ffd5b60208201935080925050509295985092959850929598565b5f60208284031215610a6a575f5ffd5b61096b82610989565b60ff8181168382160190811115610a9857634e487b7160e01b5f52601160045260245ffd5b9291505056fea2646970667358221220bcd0f5cd2c7643f38b7c4134f093ac7634ffa024b7accb6fc100a87573e8e61464736f6c634300081c0033","sourceMap":"163:4291:0:-:0;;;1660:939;;;;;;;;;;;;;;;;;;:::i;:::-;1851:20;;;;;:52;;;1888:15;1875:9;-1:-1:-1;;;;;1875:28:0;;;1851:52;:88;;;-1:-1:-1;;;;;;1907:32:0;;;1851:88;:106;;;-1:-1:-1;1943:9:0;:14;1851:106;1847:137;;;1966:18;;-1:-1:-1;;;1966:18:0;;;;;;;;;;;1847:137;1986:26;;;;2014:28;;;;2044:32;;;;-1:-1:-1;2044:32:0;;;-1:-1:-1;;;;;2078:20:0;;;;2112:10;2100:22;;2124:17;:38;;-1:-1:-1;;;;;;2124:38:0;-1:-1:-1;;;;;2124:38:0;;;;;2164:36;;;;2202:30;;;;;-1:-1:-1;2263:190:0;;2274:95;-1:-1:-1;2263:190:0;;1372:25:2;2371:35:0;1413:18:2;;;1406:34;;;;2408:14:0;-1:-1:-1;1456:18:2;;1449:34;2424:13:0;-1:-1:-1;1499:18:2;;1492:34;2447:4:0;1542:19:2;;;1535:61;;;;1344:19;2263:190:0;;;;;;-1:-1:-1;;2263:190:0;;;;;;2253:201;;2263:190;2253:201;;;;2234:220;;;;2504:9;1890:25:2;;1931:18;;;1924:34;;;-1:-1:-1;;;;;1994:31:2;;1974:18;;;1967:59;;;;2074:10;2062:23;;2057:2;2042:18;;2035:51;-1:-1:-1;;;;;2123:32:2;;2102:19;;;2095:61;2143:3;2172:19;;2165:35;;;2492:10:0;;2478:12;;2461:135;;1877:3:2;1862:19;2461:135:0;;;;;;;1660:939;;;;;;;163:4291;;14:167:2;92:13;;145:10;134:22;;124:33;;114:61;;171:1;168;161:12;114:61;14:167;;;:::o;186:922::-;307:6;315;323;331;339;347;355;408:3;396:9;387:7;383:23;379:33;376:53;;;425:1;422;415:12;376:53;470:16;;550:2;535:18;;529:25;470:16;;-1:-1:-1;529:25:2;-1:-1:-1;573:48:2;617:2;602:18;;573:48;:::i;:::-;666:2;651:18;;645:25;563:58;;-1:-1:-1;;;;;;701:32:2;;689:45;;679:73;;748:1;745;738:12;679:73;823:3;808:19;;802:26;771:7;;-1:-1:-1;;;;;;859:33:2;;847:46;;837:74;;907:1;904;897:12;837:74;1003:3;988:19;;982:26;930:7;;-1:-1:-1;982:26:2;-1:-1:-1;1053:49:2;1097:3;1082:19;;1053:49;:::i;:::-;1043:59;;186:922;;;;;;;;;;:::o;1607:599::-;163:4291:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;","linkReferences":{}},"deployedBytecode":{"object":"0x608060405234801561000f575f5ffd5b50600436106100fb575f3560e01c80634e93aeb8116100935780638aa82455116100635780638aa82455146102e6578063b61e96a5146102f9578063bdf22ab414610320578063c700869b14610347575f5ffd5b80634e93aeb8146102725780635efe1b7e146102995780636717e41c146102af5780637675f878146102d1575f5ffd5b806329dcb0cf116100ce57806329dcb0cf146101ba5780633644e515146101fa578063483e6e3a1461022157806349430bcf14610248575f5ffd5b80630abea268146100ff578063123f8e9f14610136578063158dec251461016b578063295b4e17146101a7575b5f5ffd5b61012161010d366004610972565b60016020525f908152604090205460ff1681565b60405190151581526020015b60405180910390f35b61015d7fefc6bbbf25a4c7abd81a3bbe4cb2791d1407f097f8aedfdcc5ff95c90388eb3281565b60405190815260200161012d565b6101927f000000000000000000000000000000000000000000000000000000000000000081565b60405163ffffffff909116815260200161012d565b5f5461012190600160c01b900460ff1681565b6101e17f000000000000000000000000000000000000000000000000000000000000000081565b60405167ffffffffffffffff909116815260200161012d565b61015d7f000000000000000000000000000000000000000000000000000000000000000081565b61015d7f000000000000000000000000000000000000000000000000000000000000000081565b5f5461025a906001600160a01b031681565b6040516001600160a01b03909116815260200161012d565b61015d7f000000000000000000000000000000000000000000000000000000000000000081565b5f5461019290600160a01b900463ffffffff1681565b6101216102bd366004610972565b60026020525f908152604090205460ff1681565b6102e46102df3660046109a4565b61036e565b005b6102e46102f4366004610a5a565b610833565b61025a7f000000000000000000000000000000000000000000000000000000000000000081565b61015d7f000000000000000000000000000000000000000000000000000000000000000081565b6101927f000000000000000000000000000000000000000000000000000000000000000081565b5f546001600160a01b03163314610397576040516282b42960e81b815260040160405180910390fd5b7f000000000000000000000000000000000000000000000000000000000000000067ffffffffffffffff164211156103e257604051630407b05b60e31b815260040160405180910390fd5b4283108061041957507f000000000000000000000000000000000000000000000000000000000000000067ffffffffffffffff1683115b156104365760405162d36c8560e81b815260040160405180910390fd5b6001600160a01b03871661045d5760405163bebdc75760e01b815260040160405180910390fd5b5f8981526001602052604090205460ff161561048c57604051638daa9e4960e01b815260040160405180910390fd5b5f8481526002602052604090205460ff16156104bb57604051631f6d5aef60e01b815260040160405180910390fd5b5f5463ffffffff7f00000000000000000000000000000000000000000000000000000000000000008116600160a01b909204161061050b57604051628306a160e61b815260040160405180910390fd5b604080517fefc6bbbf25a4c7abd81a3bbe4cb2791d1407f097f8aedfdcc5ff95c90388eb32602082015246918101919091523060608201527f0000000000000000000000000000000000000000000000000000000000000000608082015260a081018a905260c081018990526001600160a01b03881660e0820152610100810187905261012081018690527f000000000000000000000000000000000000000000000000000000000000000061014082015263ffffffff7f00000000000000000000000000000000000000000000000000000000000000001661016082015261018081018590526101a081018490525f906101c00160408051808303601f190181529082905280516020918201205f5461190160f01b928401929092527f000000000000000000000000000000000000000000000000000000000000000060228401526042830181905292506001600160a01b031690610685906062016040516020818303038152906040528051906020012085856108d6565b6001600160a01b0316146106ac57604051638baa579f60e01b815260040160405180910390fd5b5f8a8152600160208181526040808420805460ff19908116851790915589855260029092528320805490911682179055815463ffffffff600160a01b80830482169093011690910263ffffffff60a01b199091161781557f0000000000000000000000000000000000000000000000000000000000000000881080159061073c57505f54600160c01b900460ff16155b905080156107c5575f805460ff60c01b1916600160c01b1781556040516001600160a01b038b169047908381818185875af1925050503d805f811461079c576040519150601f19603f3d011682016040523d82523d5f602084013e6107a1565b606091505b50509050806107c3576040516312171d8360e31b815260040160405180910390fd5b505b886001600160a01b03168a8c7f835418e644f006ae269e2c0d781803b2f70db41d89a8fa48cce224dfb2c384db8b8b868c60405161081e9493929190938452602084019290925215156040830152606082015260800190565b60405180910390a45050505050505050505050565b336001600160a01b037f00000000000000000000000000000000000000000000000000000000000000001614158061087257506001600160a01b038116155b1561088f576040516282b42960e81b815260040160405180910390fd5b5f80546001600160a01b0319166001600160a01b038316908117825560405190917fd127d653f0704c54a17ddcf4b18ed6334c8608d7c2b3d96542e50de74107e72e91a250565b5f604182146108e657505f61096b565b8235602084013560408501355f1a601b81101561090b57610908601b82610a73565b90505b604080515f81526020810180835289905260ff831691810191909152606081018490526080810183905260019060a0016020604051602081039080840390855afa15801561095b573d5f5f3e3d5ffd5b5050506020604051035193505050505b9392505050565b5f60208284031215610982575f5ffd5b5035919050565b80356001600160a01b038116811461099f575f5ffd5b919050565b5f5f5f5f5f5f5f5f5f6101008a8c0312156109bd575f5ffd5b8935985060208a013597506109d460408b01610989565b965060608a0135955060808a0135945060a08a0135935060c08a0135925060e08a013567ffffffffffffffff811115610a0b575f5ffd5b8a01601f81018c13610a1b575f5ffd5b803567ffffffffffffffff811115610a31575f5ffd5b8c6020828401011115610a42575f5ffd5b60208201935080925050509295985092959850929598565b5f60208284031215610a6a575f5ffd5b61096b82610989565b60ff8181168382160190811115610a9857634e487b7160e01b5f52601160045260245ffd5b9291505056fea2646970667358221220bcd0f5cd2c7643f38b7c4134f093ac7634ffa024b7accb6fc100a87573e8e61464736f6c634300081c0033","sourceMap":"163:4291:0:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;886:41;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;;;410:14:2;;403:22;385:41;;373:2;358:18;886:41:0;;;;;;;;194:291;;236:249;194:291;;;;;583:25:2;;;571:2;556:18;194:291:0;437:177:2;573:38:0;;;;;;;;793:10:2;781:23;;;763:42;;751:2;736:18;573:38:0;619:192:2;826:16:0;;;;;-1:-1:-1;;;826:16:0;;;;;;613:32;;;;;;;;990:18:2;978:31;;;960:50;;948:2;933:18;613:32:0;816:200:2;491:41:0;;;;;844:36;;;;;683:32;;;;;-1:-1:-1;;;;;683:32:0;;;;;;-1:-1:-1;;;;;1185:32:2;;;1167:51;;1155:2;1140:18;683:32:0;1021:203:2;717:41:0;;;;;799:25;;;;;-1:-1:-1;;;799:25:0;;;;;;929:42;;;;;;:::i;:::-;;;;;;;;;;;;;;;;2817:1283;;;;;;:::i;:::-;;:::i;:::-;;2604:208;;;;;;:::i;:::-;;:::i;647:34::-;;;;;534:37;;;;;760;;;;;2817:1283;3014:17;;-1:-1:-1;;;;;3014:17:0;3000:10;:31;2996:58;;3040:14;;-1:-1:-1;;;3040:14:0;;;;;;;;;;;2996:58;3078:8;3060:26;;:15;:26;3056:48;;;3095:9;;-1:-1:-1;;;3095:9:0;;;;;;;;;;;3056:48;3119:15;3110:6;:24;:45;;;;3147:8;3138:17;;:6;:17;3110:45;3106:73;;;3164:15;;-1:-1:-1;;;3164:15:0;;;;;;;;;;;3106:73;-1:-1:-1;;;;;3185:19:0;;3181:46;;3213:14;;-1:-1:-1;;;3213:14:0;;;;;;;;;;;3181:46;3233:23;;;;:9;:23;;;;;;;;3229:57;;;3265:21;;-1:-1:-1;;;3265:21:0;;;;;;;;;;;3229:57;3292:17;;;;:10;:17;;;;;;;;3288:41;;;3318:11;;-1:-1:-1;;;3318:11:0;;;;;;;;;;;3288:41;3335:11;;:29;3350:14;3335:29;;-1:-1:-1;;;3335:11:0;;;;:29;3331:59;;3373:17;;-1:-1:-1;;;3373:17:0;;;;;;;;;;;3331:59;3423:171;;;236:249;3423:171;;;3879:25:2;3451:13:0;3920:18:2;;;3913:34;;;;3474:4:0;3963:18:2;;;3956:60;3481:11:0;4032:18:2;;;4025:34;4075:19;;;4068:35;;;4119:19;;;4112:35;;;-1:-1:-1;;;;;4184:32:2;;4163:19;;;4156:61;4233:19;;;4226:35;;;4277:19;;;4270:35;;;3547:16:0;4321:19:2;;;4314:35;4399:10;3565:13:0;4386:24:2;4365:19;;;4358:53;4427:19;;;4420:36;;;4472:19;;;4465:36;;;3392:18:0;;3851:19:2;;3423:171:0;;;;;;-1:-1:-1;;3423:171:0;;;;;;;3413:182;;3423:171;3413:182;;;;3695:17;;-1:-1:-1;;;3620:58:0;;;4770:27:2;;;;3649:16:0;4813:11:2;;;4806:27;4849:12;;;4842:28;;;3413:182:0;-1:-1:-1;;;;;;3695:17:0;;3601:90;;4886:12:2;;3620:58:0;;;;;;;;;;;;3610:69;;;;;;3681:9;;3601:8;:90::i;:::-;-1:-1:-1;;;;;3601:111:0;;3597:142;;3721:18;;-1:-1:-1;;;3721:18:0;;;;;;;;;;;3597:142;3741:23;;;;3767:4;3741:23;;;;;;;;:30;;-1:-1:-1;;3741:30:0;;;;;;;;3773:17;;;:10;:17;;;;;:24;;;;;;;;;3811:13;;;-1:-1:-1;;;3811:13:0;;;;;;;;;;;;-1:-1:-1;;;;3811:13:0;;;;;;3854:12;3845:21;;;;;:30;;-1:-1:-1;3871:4:0;;-1:-1:-1;;;3871:4:0;;;;3870:5;3845:30;3828:47;;3881:9;3877:124;;;3894:4;:11;;-1:-1:-1;;;;3894:11:0;-1:-1:-1;;;3894:11:0;;;3920:44;;-1:-1:-1;;;;;3920:10:0;;;3938:21;;3894:4;3920:44;3894:4;3920:44;3938:21;3920:10;:44;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;3907:57;;;3971:2;3966:32;;3982:16;;-1:-1:-1;;;3982:16:0;;;;;;;;;;;3966:32;3892:109;3877:124;4057:5;-1:-1:-1;;;;;4007:90:0;4041:14;4027:12;4007:90;4064:5;4071:7;4080:9;4091:5;4007:90;;;;;;;;5344:25:2;;;5400:2;5385:18;;5378:34;;;;5455:14;5448:22;5443:2;5428:18;;5421:50;5502:2;5487:18;;5480:34;5331:3;5316:19;;5119:401;4007:90:0;;;;;;;;2994:1106;;2817:1283;;;;;;;;;:::o;2604:208::-;2669:10;-1:-1:-1;;;;;2683:9:0;2669:23;;;;:48;;-1:-1:-1;;;;;;2696:21:0;;;2669:48;2665:75;;;2726:14;;-1:-1:-1;;;2726:14:0;;;;;;;;;;;2665:75;2742:17;:27;;-1:-1:-1;;;;;;2742:27:0;-1:-1:-1;;;;;2742:27:0;;;;;;;2776:33;;2742:27;;2776:33;;;2604:208;:::o;4105:347::-;4182:7;4211:2;4197:16;;4193:39;;-1:-1:-1;4230:1:0;4215:17;;4193:39;4281:24;;4340:2;4324:19;;4311:33;4387:2;4371:19;;4358:33;4234:9;4350:42;4403:2;4399:6;;4395:19;;;4407:7;4412:2;4407:7;;:::i;:::-;;;4395:19;4423:26;;;;;;;;;;;;6002:25:2;;;6075:4;6063:17;;6043:18;;;6036:45;;;;6097:18;;;6090:34;;;6140:18;;;6133:34;;;4423:26:0;;5974:19:2;;4423:26:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;4416:33;;;;;4105:347;;;;;;:::o;14:226:2:-;73:6;126:2;114:9;105:7;101:23;97:32;94:52;;;142:1;139;132:12;94:52;-1:-1:-1;187:23:2;;14:226;-1:-1:-1;14:226:2:o;1460:173::-;1528:20;;-1:-1:-1;;;;;1577:31:2;;1567:42;;1557:70;;1623:1;1620;1613:12;1557:70;1460:173;;;:::o;1638:1379::-;1771:6;1779;1787;1795;1803;1811;1819;1827;1835;1888:3;1876:9;1867:7;1863:23;1859:33;1856:53;;;1905:1;1902;1895:12;1856:53;1950:23;;;-1:-1:-1;2070:2:2;2055:18;;2042:32;;-1:-1:-1;2119:38:2;2153:2;2138:18;;2119:38;:::i;:::-;2109:48;-1:-1:-1;2230:2:2;2215:18;;2202:32;;-1:-1:-1;2333:3:2;2318:19;;2305:33;;-1:-1:-1;2437:3:2;2422:19;;2409:33;;-1:-1:-1;2541:3:2;2526:19;;2513:33;;-1:-1:-1;2623:3:2;2608:19;;2595:33;2651:18;2640:30;;2637:50;;;2683:1;2680;2673:12;2637:50;2706:22;;2759:4;2751:13;;2747:27;-1:-1:-1;2737:55:2;;2788:1;2785;2778:12;2737:55;2828:2;2815:16;2854:18;2846:6;2843:30;2840:50;;;2886:1;2883;2876:12;2840:50;2931:7;2926:2;2917:6;2913:2;2909:15;2905:24;2902:37;2899:57;;;2952:1;2949;2942:12;2899:57;2983:2;2979;2975:11;2965:21;;3005:6;2995:16;;;;1638:1379;;;;;;;;;;;:::o;3022:186::-;3081:6;3134:2;3122:9;3113:7;3109:23;3105:32;3102:52;;;3150:1;3147;3140:12;3102:52;3173:29;3192:9;3173:29;:::i;5525:245::-;5613:4;5592:12;;;5606;;;5588:31;;5631:13;;5628:136;;;5686:10;5681:3;5677:20;5674:1;5667:31;5721:4;5718:1;5711:15;5749:4;5746:1;5739:15;5628:136;5525:245;;;;:::o","linkReferences":{},"immutableReferences":{"11":[{"start":805,"length":32},{"start":1797,"length":32}],"13":[{"start":368,"length":32},{"start":1220,"length":32}],"15":[{"start":447,"length":32},{"start":921,"length":32},{"start":1005,"length":32}],"17":[{"start":766,"length":32},{"start":2110,"length":32}],"21":[{"start":631,"length":32},{"start":1432,"length":32}],"23":[{"start":844,"length":32},{"start":1476,"length":32}],"29":[{"start":550,"length":32},{"start":1349,"length":32}],"9":[{"start":511,"length":32},{"start":1578,"length":32}]}},"methodIdentifiers":{"DOMAIN_SEPARATOR()":"3644e515","RESULT_TYPEHASH()":"123f8e9f","authorizedBackend()":"49430bcf","challengeId()":"483e6e3a","deadline()":"29dcb0cf","finalize(bytes32,bytes32,address,uint256,bytes32,uint256,uint256,bytes)":"7675f878","finalized(bytes32)":"0abea268","graderCommitment()":"4e93aeb8","graderVersion()":"c700869b","maxSubmissions()":"158dec25","paid()":"295b4e17","passingScore()":"bdf22ab4","requester()":"b61e96a5","rotateAuthorizedBackend(address)":"8aa82455","submissions()":"5efe1b7e","usedNonces(uint256)":"6717e41c"},"rawMetadata":"{\"compiler\":{\"version\":\"0.8.28+commit.7893614a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_challengeId\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"_passingScore\",\"type\":\"uint256\"},{\"internalType\":\"uint32\",\"name\":\"_maxSubmissions\",\"type\":\"uint32\"},{\"internalType\":\"uint64\",\"name\":\"_deadline\",\"type\":\"uint64\"},{\"internalType\":\"address\",\"name\":\"_authorizedBackend\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"_graderCommitment\",\"type\":\"bytes32\"},{\"internalType\":\"uint32\",\"name\":\"_graderVersion\",\"type\":\"uint32\"}],\"stateMutability\":\"payable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"CapacityReached\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"DuplicateSubmission\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"Expired\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidAgent\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidChallenge\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidExpiry\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidSignature\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"NonceUsed\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"TransferFailed\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"Unauthorized\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"backend\",\"type\":\"address\"}],\"name\":\"AuthorizedBackendRotated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"challengeId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"requester\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"reward\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"passingScore\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"deadline\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint32\",\"name\":\"maxSubmissions\",\"type\":\"uint32\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"authorizedBackend\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"graderCommitment\",\"type\":\"bytes32\"}],\"name\":\"ChallengeCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"submissionId\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"submissionHash\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"agent\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"score\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"outcome\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"paid\",\"type\":\"bool\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"}],\"name\":\"SubmissionFinalized\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"DOMAIN_SEPARATOR\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"RESULT_TYPEHASH\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"authorizedBackend\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"challengeId\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"deadline\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"submissionId\",\"type\":\"bytes32\"},{\"internalType\":\"bytes32\",\"name\":\"submissionHash\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"agent\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"score\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"outcome\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"expiry\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"name\":\"finalize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"finalized\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"graderCommitment\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"graderVersion\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxSubmissions\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paid\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"passingScore\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"requester\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"backend\",\"type\":\"address\"}],\"name\":\"rotateAuthorizedBackend\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"submissions\",\"outputs\":[{\"internalType\":\"uint32\",\"name\":\"\",\"type\":\"uint32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"usedNonces\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"notice\":\"Settlement accepts challenge-defined scaled integers; score interpretation remains off-chain.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/ChallengeEscrow.sol\":\"ChallengeEscrow\"},\"evmVersion\":\"prague\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"src/ChallengeEscrow.sol\":{\"keccak256\":\"0x6751c58c1ffa440e14092aebf509749bf4e373fe1b6a8d459af76259ed170edc\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://4a131612672a2101f68c1190cbcf41826cabd359ec15e42b2ed59227520df1ec\",\"dweb:/ipfs/QmZSXpf8Vv8j8TmajRLAQSpmHXZRo5dBV9yQhTD2ntP3hb\"]}},\"version\":1}","metadata":{"compiler":{"version":"0.8.28+commit.7893614a"},"language":"Solidity","output":{"abi":[{"inputs":[{"internalType":"bytes32","name":"_challengeId","type":"bytes32"},{"internalType":"uint256","name":"_passingScore","type":"uint256"},{"internalType":"uint32","name":"_maxSubmissions","type":"uint32"},{"internalType":"uint64","name":"_deadline","type":"uint64"},{"internalType":"address","name":"_authorizedBackend","type":"address"},{"internalType":"bytes32","name":"_graderCommitment","type":"bytes32"},{"internalType":"uint32","name":"_graderVersion","type":"uint32"}],"stateMutability":"payable","type":"constructor"},{"inputs":[],"type":"error","name":"CapacityReached"},{"inputs":[],"type":"error","name":"DuplicateSubmission"},{"inputs":[],"type":"error","name":"Expired"},{"inputs":[],"type":"error","name":"InvalidAgent"},{"inputs":[],"type":"error","name":"InvalidChallenge"},{"inputs":[],"type":"error","name":"InvalidExpiry"},{"inputs":[],"type":"error","name":"InvalidSignature"},{"inputs":[],"type":"error","name":"NonceUsed"},{"inputs":[],"type":"error","name":"TransferFailed"},{"inputs":[],"type":"error","name":"Unauthorized"},{"inputs":[{"internalType":"address","name":"backend","type":"address","indexed":true}],"type":"event","name":"AuthorizedBackendRotated","anonymous":false},{"inputs":[{"internalType":"bytes32","name":"challengeId","type":"bytes32","indexed":true},{"internalType":"address","name":"requester","type":"address","indexed":true},{"internalType":"uint256","name":"reward","type":"uint256","indexed":false},{"internalType":"uint256","name":"passingScore","type":"uint256","indexed":false},{"internalType":"uint64","name":"deadline","type":"uint64","indexed":false},{"internalType":"uint32","name":"maxSubmissions","type":"uint32","indexed":false},{"internalType":"address","name":"authorizedBackend","type":"address","indexed":false},{"internalType":"bytes32","name":"graderCommitment","type":"bytes32","indexed":false}],"type":"event","name":"ChallengeCreated","anonymous":false},{"inputs":[{"internalType":"bytes32","name":"submissionId","type":"bytes32","indexed":true},{"internalType":"bytes32","name":"submissionHash","type":"bytes32","indexed":true},{"internalType":"address","name":"agent","type":"address","indexed":true},{"internalType":"uint256","name":"score","type":"uint256","indexed":false},{"internalType":"bytes32","name":"outcome","type":"bytes32","indexed":false},{"internalType":"bool","name":"paid","type":"bool","indexed":false},{"internalType":"uint256","name":"nonce","type":"uint256","indexed":false}],"type":"event","name":"SubmissionFinalized","anonymous":false},{"inputs":[],"stateMutability":"view","type":"function","name":"DOMAIN_SEPARATOR","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"RESULT_TYPEHASH","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"authorizedBackend","outputs":[{"internalType":"address","name":"","type":"address"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"challengeId","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"deadline","outputs":[{"internalType":"uint64","name":"","type":"uint64"}]},{"inputs":[{"internalType":"bytes32","name":"submissionId","type":"bytes32"},{"internalType":"bytes32","name":"submissionHash","type":"bytes32"},{"internalType":"address","name":"agent","type":"address"},{"internalType":"uint256","name":"score","type":"uint256"},{"internalType":"bytes32","name":"outcome","type":"bytes32"},{"internalType":"uint256","name":"nonce","type":"uint256"},{"internalType":"uint256","name":"expiry","type":"uint256"},{"internalType":"bytes","name":"signature","type":"bytes"}],"stateMutability":"nonpayable","type":"function","name":"finalize"},{"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function","name":"finalized","outputs":[{"internalType":"bool","name":"","type":"bool"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"graderCommitment","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"graderVersion","outputs":[{"internalType":"uint32","name":"","type":"uint32"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"maxSubmissions","outputs":[{"internalType":"uint32","name":"","type":"uint32"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"paid","outputs":[{"internalType":"bool","name":"","type":"bool"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"passingScore","outputs":[{"internalType":"uint256","name":"","type":"uint256"}]},{"inputs":[],"stateMutability":"view","type":"function","name":"requester","outputs":[{"internalType":"address","name":"","type":"address"}]},{"inputs":[{"internalType":"address","name":"backend","type":"address"}],"stateMutability":"nonpayable","type":"function","name":"rotateAuthorizedBackend"},{"inputs":[],"stateMutability":"view","type":"function","name":"submissions","outputs":[{"internalType":"uint32","name":"","type":"uint32"}]},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function","name":"usedNonces","outputs":[{"internalType":"bool","name":"","type":"bool"}]}],"devdoc":{"kind":"dev","methods":{},"version":1},"userdoc":{"kind":"user","methods":{},"version":1}},"settings":{"remappings":[],"optimizer":{"enabled":true,"runs":200},"metadata":{"bytecodeHash":"ipfs"},"compilationTarget":{"src/ChallengeEscrow.sol":"ChallengeEscrow"},"evmVersion":"prague","libraries":{}},"sources":{"src/ChallengeEscrow.sol":{"keccak256":"0x6751c58c1ffa440e14092aebf509749bf4e373fe1b6a8d459af76259ed170edc","urls":["bzz-raw://4a131612672a2101f68c1190cbcf41826cabd359ec15e42b2ed59227520df1ec","dweb:/ipfs/QmZSXpf8Vv8j8TmajRLAQSpmHXZRo5dBV9yQhTD2ntP3hb"],"license":"MIT"}},"version":1},"id":0}
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_challengeId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "_requester",
+        "type": "address",
+        "internalType": "address payable"
+      },
+      {
+        "name": "_passingScore",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_maxSubmissions",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "_deadline",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "_authorizedBackend",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_graderCommitment",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "_graderVersion",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "DOMAIN_SEPARATOR",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "RESULT_TYPEHASH",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "authorizedBackend",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "challengeId",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "deadline",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "finalize",
+    "inputs": [
+      {
+        "name": "submissionId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "submissionHash",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address payable"
+      },
+      {
+        "name": "score",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "outcome",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "nonce",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "expiry",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "signature",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "finalized",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "graderCommitment",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "graderVersion",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "maxSubmissions",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "paid",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "passingScore",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "refundExpired",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "refunded",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "requester",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address payable"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "rotateAuthorizedBackend",
+    "inputs": [
+      {
+        "name": "backend",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "submissions",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "usedNonces",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "AuthorizedBackendRotated",
+    "inputs": [
+      {
+        "name": "previousBackend",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "backend",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ChallengeCreated",
+    "inputs": [
+      {
+        "name": "challengeId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "requester",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "reward",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "passingScore",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "deadline",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "maxSubmissions",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "authorizedBackend",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "graderCommitment",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "graderVersion",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ChallengeRefunded",
+    "inputs": [
+      {
+        "name": "challengeId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "requester",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SubmissionFinalized",
+    "inputs": [
+      {
+        "name": "submissionId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "submissionHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "score",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "outcome",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "paid",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "nonce",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AlreadyResolved",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CapacityReached",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DuplicateSubmission",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "Expired",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidAgent",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidChallenge",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidExpiry",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidSignature",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NonceUsed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotExpired",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TransferFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "Unauthorized",
+    "inputs": []
+  }
+]

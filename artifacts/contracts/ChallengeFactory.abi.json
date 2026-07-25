@@ -1,0 +1,147 @@
+[
+  {
+    "type": "function",
+    "name": "createChallenge",
+    "inputs": [
+      {
+        "name": "challengeId",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "passingScore",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxSubmissions",
+        "type": "uint32",
+        "internalType": "uint32"
+      },
+      {
+        "name": "deadline",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "authorizedBackend",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "graderCommitment",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "graderVersion",
+        "type": "uint32",
+        "internalType": "uint32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "escrow",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "escrowForChallenge",
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "ChallengeDeployed",
+    "inputs": [
+      {
+        "name": "challengeId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "escrow",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "requester",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "reward",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "passingScore",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "deadline",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "maxSubmissions",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      },
+      {
+        "name": "authorizedBackend",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "graderCommitment",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "graderVersion",
+        "type": "uint32",
+        "indexed": false,
+        "internalType": "uint32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "ChallengeAlreadyExists",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidChallenge",
+    "inputs": []
+  }
+]

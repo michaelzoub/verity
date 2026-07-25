@@ -1,4 +1,13 @@
-import { mkdir, access, writeFile } from "node:fs/promises";
-await mkdir(".verity/objects", { recursive: true });
-try { await access(".verity/data.json"); } catch { await writeFile(".verity/data.json", JSON.stringify({ schemaVersion: 2, challenges: [], submissions: [], jobs: [], events: [], checkpoints: {} }, null, 2)); }
-console.log("Verity local schema v2 ready (private graders and scaled scores)");
+import postgres from "postgres";
+const url = process.env.DATABASE_URL;
+if (!url) throw new Error("DATABASE_URL is required; local JSON persistence is not supported");
+const sql = postgres(url, { max: 1, ssl: "require" });
+await sql`create table if not exists verity_records (kind text not null, id text not null, value jsonb not null, updated_at timestamptz not null default now(), primary key(kind,id))`;
+await sql`create table if not exists verity_jobs (id uuid primary key, value jsonb not null, status text not null, created_at timestamptz not null default now(), claimed_at timestamptz)`;
+await sql`create table if not exists verity_indexer_events (event_id text primary key, chain_id integer not null, contract_address text not null, block_number bigint not null, value jsonb not null, created_at timestamptz not null default now())`;
+await sql`create index if not exists verity_jobs_claimable on verity_jobs(status, created_at)`;
+await sql`create index if not exists verity_records_submission_challenge on verity_records ((value->>'challengeId')) where kind='submission'`;
+await sql`create unique index if not exists verity_company_privy_subject on verity_records ((value->>'privySubject')) where kind='company'`;
+await sql`create index if not exists verity_indexer_contract_block on verity_indexer_events(chain_id, contract_address, block_number)`;
+await sql.end();
+console.log("Supabase Postgres migrations applied");

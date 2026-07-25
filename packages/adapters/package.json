@@ -1,1 +1,1 @@
-{ "name": "@verity/adapters", "private": true, "version": "0.1.0", "main": "./src/index.ts", "types": "./src/index.ts" }
+{"name":"@verity/adapters","private":true,"version":"0.1.0","main":"./src/index.ts","types":"./src/index.ts","dependencies":{"@supabase/supabase-js":"^2.110.8","e2b":"^2.36.0","postgres":"^3.4.9"}}
