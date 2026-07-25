@@ -15,6 +15,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { authenticateCompany, AuthError, requireCompanyOwnership } from "./auth";
+import { hasSupportedGraderEntrypoint } from "./grader-validation";
 import { runGrader, runSubmissionHarness, validateE2BTemplates } from "../../grader-worker/src/sandbox";
 
 const required = [
@@ -149,7 +150,7 @@ function validateGrader(input: ReturnType<typeof createChallengeSchema.parse>, o
   const entrypoint = input.language === "python" ? "grade" as const : "default" as const;
   if (!source.trim() || source.includes("\0") || bytes.length > 256 * 1024) throw new Error("invalid_grader_source");
   if (input.graderFileName && extname(input.graderFileName).toLowerCase() !== extensions[input.language as keyof typeof extensions]) throw new Error("grader_extension_language_mismatch");
-  if (input.language === "python" ? !/def\s+grade\s*\(\s*input\s*\)/.test(source) : !/export\s+default\s+async\s+function\s+grade\s*\(\s*input\s*\)/.test(source)) throw new Error("GRADER_MISSING_ENTRYPOINT");
+  if (!hasSupportedGraderEntrypoint(input.language, source)) throw new Error("GRADER_MISSING_ENTRYPOINT");
   const checksum = `0x${sha256Hex(bytes)}`;
   return {
     source,
