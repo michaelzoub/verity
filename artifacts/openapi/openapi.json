@@ -1,1 +1,10 @@
-{"openapi":"3.1.0","info":{"title":"Verity API","version":"0.1.0"},"paths":{"/challenges":{"post":{"summary":"Create a challenge"}},"/submissions":{"post":{"summary":"Submit a signed solution"}}}}
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Verity API", "version": "0.2.0" },
+  "components": { "securitySchemes": { "privyBearer": { "type": "http", "scheme": "bearer", "bearerFormat": "Privy access token" } }, "schemas": { "Company": { "type": "object", "required": ["id", "privySubject"], "properties": { "id": { "type": "string" }, "privySubject": { "type": "string" } } }, "AuthError": { "type": "object", "required": ["error"], "properties": { "error": { "type": "string", "enum": ["unauthorized", "forbidden"] }, "message": { "type": "string" } } } } },
+  "paths": {
+    "/v1/auth/me": { "get": { "summary": "Resolve the authenticated local company", "security": [{ "privyBearer": [] }], "responses": { "200": { "description": "Authenticated company" }, "401": { "description": "Missing or invalid Privy access token" } } } },
+    "/api/challenges": { "post": { "summary": "Create a company-owned challenge", "security": [{ "privyBearer": [] }], "responses": { "201": { "description": "Created" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } } },
+    "/api/challenges/{challengeId}/fund": { "post": { "summary": "Fund a company-owned challenge", "security": [{ "privyBearer": [] }], "parameters": [{ "name": "challengeId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "202": { "description": "Funding submitted" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } } }
+  }
+}
