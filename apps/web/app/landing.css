@@ -1,0 +1,136 @@
+/* Landing — editorial split + thermal gradient hero */
+
+.landing {
+  min-height: 100vh;
+  background: #e4e4e0;
+}
+
+.landing-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  min-height: 100vh;
+  width: 100%;
+  background: #fff;
+}
+
+.landing-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4rem;
+  padding: clamp(1.75rem, 4vw, 3rem);
+  min-height: 100vh;
+}
+
+.landing-brand {
+  display: flex;
+  align-items: baseline;
+  animation: landing-fade 0.9s ease both;
+}
+
+.landing-name {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.06em;
+}
+
+.landing-body {
+  max-width: 32rem;
+  animation: landing-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.landing-kicker {
+  margin: 0 0 0.85rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.landing-body h1 {
+  margin: 0;
+  font-size: clamp(2.6rem, 5.2vw, 4.35rem);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.landing-lede {
+  margin: 1.1rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1.75rem;
+  animation: landing-rise 1s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
+}
+
+.landing-visual {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #fff;
+}
+
+.gradient-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes landing-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-brand,
+  .landing-body,
+  .landing-actions {
+    animation: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .landing-hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .landing-copy {
+    min-height: auto;
+    gap: 3.5rem;
+    padding: 1.5rem 1.25rem 2.25rem;
+  }
+
+  .landing-visual {
+    min-height: min(58vh, 420px);
+    order: -1;
+  }
+
+  .landing-body h1 {
+    font-size: clamp(2.4rem, 11vw, 3.4rem);
+  }
+}
