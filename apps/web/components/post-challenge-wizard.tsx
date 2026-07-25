@@ -595,7 +595,7 @@ export function PostChallengeWizard() {
   }
 
   async function publish() {
-    if (!canAdvance || validatedFingerprint !== validationFingerprint(draft)) return;
+    if (!canAdvance) return;
     if (!api.authenticated) {
       api.login();
       return;
@@ -1292,7 +1292,7 @@ function ConfirmStep({
         <h1 id="confirm-heading">Review what becomes public.</h1>
         <p className="wizard-why">
           The solver contract is published. The private grader source remains sealed and is
-          represented publicly only by its commitment.
+          represented publicly only by its commitment. Sandbox validation is optional here.
         </p>
       </div>
       <div className="confirm-grid">
@@ -1330,7 +1330,7 @@ function ConfirmStep({
                 {isCurrentValidation && <CheckCircle2 size={14} aria-hidden="true" />}
                 {isCurrentValidation
                   ? `Validated · score ${preflight?.validationResult.score ?? "—"}`
-                  : "Required before publishing"}
+                  : "Not run · grading will validate it"}
               </dd>
             </div>
           </Summary>
@@ -1366,14 +1366,14 @@ function ConfirmStep({
           {error && <FieldError message={error} />}
           {!isCurrentValidation && (
             <p className="status-line">
-              Return to step 2 and validate the current grader before publishing.
+              Validation was skipped. The grader will be validated when a submission is evaluated.
             </p>
           )}
           {status && <p className="status-line">{status}</p>}
           <button
             type="button"
             className="button primary full publish-button"
-            disabled={!draft.documentationConfirmed || !isCurrentValidation || isPublishing}
+            disabled={!draft.documentationConfirmed || isPublishing}
             onClick={onPublish}
           >
             {isPublishing ? (

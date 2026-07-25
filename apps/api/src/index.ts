@@ -387,7 +387,6 @@ async function main() {
         if (new Date(input.deadline).getTime() <= Date.now()) throw new Error("deadline_must_be_in_future");
         const id = randomUUID(); const graderObjectKey = `graders/${id}.${input.language === "typescript" ? "ts" : input.language === "javascript" ? "js" : "py"}`;
         const { grader } = validateGrader(input, graderObjectKey); const terms = scoreTerms(input.scoring);
-        await preflight(input);
         const challenge: ChallengeRecord = {
           id, companyId: auth.company.id, creationKey, creationRequestHash,
           intendedFundingWallet: getAddress(input.fundingWallet), title: input.title,
