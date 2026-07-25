@@ -9,7 +9,7 @@ sequenceDiagram
   API->>API: recover wallet, replay-check nonce, validate/hash/limit/deadline, persist
   API->>Q: enqueue grading job
   Q->>W: challenge-specific source + solution
-  W-->>API: authenticated job-bound normalized result only
+  W-->>API: authenticated job-bound result; API validates exact scaled score against challenge schema
   API->>E: backend signs EIP-712 then broadcasts finalize
   E-->>IDX: SubmissionFinalized
   IDX->>API: confirmed final settlement projection and payout state

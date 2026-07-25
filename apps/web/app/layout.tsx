@@ -4,6 +4,7 @@ import "./globals.css";
 import "./supplement.css";
 import "./landing.css";
 import "./marketplace.css";
+import { CompanyAuthProvider } from "@/components/privy-provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,7 +28,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body>{children}</body>
+      <body><CompanyAuthProvider>{children}</CompanyAuthProvider></body>
     </html>
   );
 }

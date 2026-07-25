@@ -39,10 +39,11 @@ Before implementing any feature, read `docs/architecture/README.md`, both versio
 ## Company authentication boundary
 
 - Privy is used only for company/requester authentication.
-- The frontend sends a Privy access token as a bearer token.
+- Company API calls send `Authorization: Bearer <privy-access-token>`; Privy provides authentication only, never ownership or settlement authority.
 - The API verifies it and derives the local company identity.
 - Client-supplied ownership fields are never trusted.
 - The backend settlement signer is a separate credential.
 - Rewards are released by the smart contract to the payout address stored with the submission.
 - Privy, settlement, contract custody, and x402 credentials must remain separate.
 - Auth contract changes require synchronized OpenAPI, generated clients, tests, and architecture docs.
+- Do not remove or bypass the Privy company sign-in button or bearer-token integration in `apps/web`; company challenge creation and management must remain available through Privy when company auth is enabled.

@@ -1,52 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
-
-/// @notice One funded challenge. Only the requester may rotate the backend;
-/// settlement requires an EIP-712 result signed by the current backend.
+/// @notice Settlement accepts challenge-defined scaled integers; score interpretation remains off-chain.
 contract ChallengeEscrow {
-    bytes32 public constant RESULT_TYPEHASH = keccak256("Settlement(uint256 chainId,address verifyingContract,bytes32 challengeId,bytes32 submissionId,bytes32 submissionHash,address agent,uint16 score,bytes32 outcome,bytes32 graderCommitment,uint32 graderVersion,uint256 nonce,uint256 expiry)");
-    bytes32 public immutable DOMAIN_SEPARATOR;
-    uint16 public immutable minimumScore;
-    uint32 public immutable maxSubmissions;
-    uint64 public immutable deadline;
-    address public immutable requester;
-    address public authorizedBackend;
-    bytes32 public immutable graderCommitment;
-    uint32 public immutable graderVersion;
-    uint32 public submissions;
-    bool public paid;
-    bytes32 public immutable challengeId;
-    mapping(bytes32 => bool) public finalized;
-    mapping(uint256 => bool) public usedNonces;
-
-    event ChallengeCreated(bytes32 indexed challengeId, address indexed requester, uint256 reward, uint16 minimumScore, uint64 deadline, uint32 maxSubmissions, address authorizedBackend, bytes32 graderCommitment);
-    event SubmissionFinalized(bytes32 indexed submissionId, bytes32 indexed submissionHash, address indexed agent, uint16 score, bytes32 outcome, bool paid, uint256 nonce);
-    event AuthorizedBackendRotated(address indexed backend);
-
-    error Unauthorized(); error Expired(); error CapacityReached(); error AlreadyPaid(); error InvalidScore(); error TransferFailed(); error DuplicateSubmission(); error InvalidAgent(); error InvalidSignature(); error NonceUsed(); error InvalidExpiry(); error InvalidChallenge();
-
-    constructor(bytes32 _challengeId, uint16 _minimumScore, uint32 _maxSubmissions, uint64 _deadline, address _authorizedBackend, bytes32 _graderCommitment, uint32 _graderVersion) payable {
-        if (_minimumScore > 10000 || _maxSubmissions == 0 || _deadline <= block.timestamp || _authorizedBackend == address(0) || msg.value == 0) revert InvalidChallenge();
-        challengeId = _challengeId; minimumScore = _minimumScore; maxSubmissions = _maxSubmissions; deadline = _deadline;
-        requester = msg.sender; authorizedBackend = _authorizedBackend; graderCommitment = _graderCommitment; graderVersion = _graderVersion;
-        DOMAIN_SEPARATOR = keccak256(abi.encode(keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"), keccak256("Verity ChallengeEscrow"), keccak256("1"), block.chainid, address(this)));
-        emit ChallengeCreated(_challengeId, msg.sender, msg.value, _minimumScore, _deadline, _maxSubmissions, _authorizedBackend, _graderCommitment);
-    }
-
+    bytes32 public constant RESULT_TYPEHASH = keccak256("Settlement(uint256 chainId,address verifyingContract,bytes32 challengeId,bytes32 submissionId,bytes32 submissionHash,address agent,uint256 score,bytes32 outcome,bytes32 graderCommitment,uint32 graderVersion,uint256 nonce,uint256 expiry)");
+    bytes32 public immutable DOMAIN_SEPARATOR; uint256 public immutable passingScore; uint32 public immutable maxSubmissions; uint64 public immutable deadline; address public immutable requester; address public authorizedBackend; bytes32 public immutable graderCommitment; uint32 public immutable graderVersion; uint32 public submissions; bool public paid; bytes32 public immutable challengeId;
+    mapping(bytes32 => bool) public finalized; mapping(uint256 => bool) public usedNonces;
+    event ChallengeCreated(bytes32 indexed challengeId, address indexed requester, uint256 reward, uint256 passingScore, uint64 deadline, uint32 maxSubmissions, address authorizedBackend, bytes32 graderCommitment);
+    event SubmissionFinalized(bytes32 indexed submissionId, bytes32 indexed submissionHash, address indexed agent, uint256 score, bytes32 outcome, bool paid, uint256 nonce); event AuthorizedBackendRotated(address indexed backend);
+    error Unauthorized(); error Expired(); error CapacityReached(); error TransferFailed(); error DuplicateSubmission(); error InvalidAgent(); error InvalidSignature(); error NonceUsed(); error InvalidExpiry(); error InvalidChallenge();
+    constructor(bytes32 _challengeId, uint256 _passingScore, uint32 _maxSubmissions, uint64 _deadline, address _authorizedBackend, bytes32 _graderCommitment, uint32 _graderVersion) payable { if (_maxSubmissions == 0 || _deadline <= block.timestamp || _authorizedBackend == address(0) || msg.value == 0) revert InvalidChallenge(); challengeId = _challengeId; passingScore = _passingScore; maxSubmissions = _maxSubmissions; deadline = _deadline; requester = msg.sender; authorizedBackend = _authorizedBackend; graderCommitment = _graderCommitment; graderVersion = _graderVersion; DOMAIN_SEPARATOR = keccak256(abi.encode(keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"), keccak256("Verity ChallengeEscrow"), keccak256("1"), block.chainid, address(this))); emit ChallengeCreated(_challengeId, msg.sender, msg.value, _passingScore, _deadline, _maxSubmissions, _authorizedBackend, _graderCommitment); }
     function rotateAuthorizedBackend(address backend) external { if (msg.sender != requester || backend == address(0)) revert Unauthorized(); authorizedBackend = backend; emit AuthorizedBackendRotated(backend); }
-
-    function finalize(bytes32 submissionId, bytes32 submissionHash, address agent, uint16 score, bytes32 outcome, uint256 nonce, uint256 expiry, bytes calldata signature) external {
-        if (msg.sender != authorizedBackend) revert Unauthorized();
-        if (block.timestamp > deadline) revert Expired(); if (expiry < block.timestamp || expiry > deadline) revert InvalidExpiry();
-        if (agent == address(0)) revert InvalidAgent(); if (finalized[submissionId]) revert DuplicateSubmission(); if (usedNonces[nonce]) revert NonceUsed();
-        if (submissions >= maxSubmissions) revert CapacityReached(); if (score > 10000) revert InvalidScore();
-        bytes32 structHash = keccak256(abi.encode(RESULT_TYPEHASH, block.chainid, address(this), challengeId, submissionId, submissionHash, agent, score, outcome, graderCommitment, graderVersion, nonce, expiry));
-        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
-        if (_recover(digest, signature) != authorizedBackend) revert InvalidSignature();
-        finalized[submissionId] = true; usedNonces[nonce] = true; unchecked { ++submissions; }
-        bool shouldPay = score >= minimumScore && !paid; if (shouldPay) { paid = true; (bool ok,) = agent.call{value: address(this).balance}(""); if (!ok) revert TransferFailed(); }
-        emit SubmissionFinalized(submissionId, submissionHash, agent, score, outcome, shouldPay, nonce);
-    }
-
+    function finalize(bytes32 submissionId, bytes32 submissionHash, address agent, uint256 score, bytes32 outcome, uint256 nonce, uint256 expiry, bytes calldata signature) external { if (msg.sender != authorizedBackend) revert Unauthorized(); if (block.timestamp > deadline) revert Expired(); if (expiry < block.timestamp || expiry > deadline) revert InvalidExpiry(); if (agent == address(0)) revert InvalidAgent(); if (finalized[submissionId]) revert DuplicateSubmission(); if (usedNonces[nonce]) revert NonceUsed(); if (submissions >= maxSubmissions) revert CapacityReached(); bytes32 structHash = keccak256(abi.encode(RESULT_TYPEHASH, block.chainid, address(this), challengeId, submissionId, submissionHash, agent, score, outcome, graderCommitment, graderVersion, nonce, expiry)); if (_recover(keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash)), signature) != authorizedBackend) revert InvalidSignature(); finalized[submissionId] = true; usedNonces[nonce] = true; unchecked { ++submissions; } bool shouldPay = score >= passingScore && !paid; if (shouldPay) { paid = true; (bool ok,) = agent.call{value: address(this).balance}(""); if (!ok) revert TransferFailed(); } emit SubmissionFinalized(submissionId, submissionHash, agent, score, outcome, shouldPay, nonce); }
     function _recover(bytes32 digest, bytes calldata sig) internal pure returns (address) { if (sig.length != 65) return address(0); bytes32 r; bytes32 s; uint8 v; assembly { r := calldataload(sig.offset) s := calldataload(add(sig.offset, 32)) v := byte(0, calldataload(add(sig.offset, 64))) } if (v < 27) v += 27; return ecrecover(digest, v, r, s); }
 }
