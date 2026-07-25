@@ -641,6 +641,7 @@ export function PostChallengeWizard() {
             to: created.walletTransaction.to,
             data: created.walletTransaction.data,
             value: `0x${BigInt(created.walletTransaction.value).toString(16)}`,
+            chainId: `0x${created.walletTransaction.chainId.toString(16)}`,
           },
         ],
       })) as string;

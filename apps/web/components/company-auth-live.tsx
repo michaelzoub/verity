@@ -16,8 +16,22 @@ export function useLiveCompanyApi() {
   const getWalletProvider = useCallback(async () => {
     if (!authenticated) throw new Error("Sign in with Privy before connecting a funding wallet.");
     if (!wallet) throw new Error("Connect a wallet through Privy before continuing.");
-    await wallet.switchChain(10143);
-    return wallet.getEthereumProvider();
+    const provider = await wallet.getEthereumProvider();
+    // Use the EIP-3326 provider method instead of Privy's wallet helper. The
+    // helper emits `Unsupported chainId` for custom chains even when the chain
+    // is present in Privy's supportedChains configuration.
+    const chainId = await provider.request({ method: "eth_chainId" });
+    if (String(chainId).toLowerCase() !== "0x279f") {
+      await provider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: "0x279f" }],
+      });
+    }
+    const confirmedChainId = await provider.request({ method: "eth_chainId" });
+    if (String(confirmedChainId).toLowerCase() !== "0x279f") {
+      throw new Error("Funding wallet is not connected to Monad Testnet (chain 10143).");
+    }
+    return provider;
   }, [authenticated, wallet]);
   const request = useCallback(async (path: string, init: RequestInit = {}) => {
       const endpoint = companyApiEndpoint(path);
