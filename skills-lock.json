@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "12-principles-of-animation": {
+      "source": "raphaelsalaja/skill",
+      "sourceType": "github",
+      "skillPath": "skills/12-principles-of-animation/SKILL.md",
+      "computedHash": "fd8f83df6be0cebd89ac8c5e5345f7b5f4028a5e32f98f1699d52fa5008c7082"
+    },
+    "emil-design-eng": {
+      "source": "emilkowalski/skill",
+      "sourceType": "github",
+      "skillPath": "skills/emil-design-eng/SKILL.md",
+      "computedHash": "41b0a4dc1a27164fe297845a6c6850a39e9242c42c9be999967fcee9df2c5974"
+    },
+    "make-interfaces-feel-better": {
+      "source": "jakubkrehel/make-interfaces-feel-better",
+      "sourceType": "github",
+      "skillPath": "skills/make-interfaces-feel-better/SKILL.md",
+      "computedHash": "c8b15b529e088a318b2d3c17f0a97e15a7b1ce9ddab8bbdf9209e6ab7315cbde"
+    },
+    "monskill": {
+      "source": "therealharpaljadeja/monskills",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "f39dee34abd63eb091a6244ecde8b0610ba29d76da754fee9036b0de761bd9e3"
+    },
+    "userinterface-wiki": {
+      "source": "raphaelsalaja/userinterface-wiki",
+      "sourceType": "github",
+      "skillPath": "skills/SKILL.md",
+      "computedHash": "7bd58aa2aaf874dd421b18700ee688b02ce72276612d7115ad6849d4878e115e"
+    }
+  }
+}

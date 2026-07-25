@@ -1,0 +1,1 @@
+{ "name": "@verity/grader-worker", "private": true, "version": "0.1.0", "scripts": { "dev": "tsx watch src/index.ts", "typecheck": "tsc --noEmit", "lint": "echo worker lint" }, "dependencies": { "@verity/domain": "file:../../packages/domain" }, "devDependencies": { "tsx": "^4.19.2", "typescript": "^5.7.3" } }

@@ -1,0 +1,24 @@
+{
+  "name": "monskills",
+  "version": "0.7.2",
+  "description": "Skills for developing apps on Monad. Assists LLM with frontend, smart contract deployment, and deploying to production",
+  "author": {
+    "name": "Harpalsinh Jadeja",
+    "url": "https://github.com/therealharpaljadeja"
+  },
+  "homepage": "https://skills.devnads.com",
+  "repository": "https://github.com/harpalsinh/monskills",
+  "license": "MIT",
+  "keywords": ["monad", "ethereum", "solidity", "web3", "blockchain", "dapp"],
+  "skills": [
+    "./addresses",
+    "./wallet",
+    "./wallet-integration",
+    "./why-monad",
+    "./concepts",
+    "./scaffold",
+    "./gas",
+    "./tooling-and-infra",
+    "./indexer"
+  ]
+}

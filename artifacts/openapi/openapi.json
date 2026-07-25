@@ -1,0 +1,1 @@
+{"openapi":"3.1.0","info":{"title":"Verity API","version":"0.1.0"},"paths":{"/challenges":{"post":{"summary":"Create a challenge"}},"/submissions":{"post":{"summary":"Submit a signed solution"}}}}

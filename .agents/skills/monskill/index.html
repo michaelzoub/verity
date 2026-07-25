@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MONSKILLS — Knowledge Skills for AI Agents</title>
+<meta name="description" content="Skills for developing apps on Monad. Assists LLM with frontend, smart contract deployment, and deploying to production.">
+<meta property="og:title" content="MONSKILLS — Knowledge Skills for AI Agents Building on Monad">
+<meta property="og:description" content="Skills for developing apps on Monad. Assists LLM with frontend, smart contract deployment, and deploying to production.">
+<meta property="og:url" content="https://skills.devnads.com">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://skills.devnads.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://skills.devnads.com/og.png">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="shared.css">
+<style>
+:root {
+  --bg: #0E091C;
+  --fg: #c8d0e8;
+  --dim: #8490b0;
+  --accent: #8B75FF;
+  --border: #2d2245;
+  --hover: #150e28;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Menlo', 'Consolas', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 1rem;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.ascii {
+  color: var(--accent);
+  font-size: 12px;
+  line-height: 1.15;
+  white-space: pre;
+  margin-bottom: 1rem;
+  letter-spacing: 0.3px;
+}
+.ascii .ch {
+  display: inline;
+}
+
+.tagline {
+  color: var(--fg);
+  font-size: 14px;
+  margin-bottom: 1.5rem;
+}
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  background: var(--accent);
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+h2 {
+  color: var(--accent);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin: 1.25rem 0 0.75rem 0;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 400;
+  width: 100%;
+}
+
+/* How to use — compact tabs */
+.how-to-tabs { margin-top: 0; width: 100%; margin-bottom: 1.5rem; }
+.how-to-tab-nav {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.how-to-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.35rem 0.75rem;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.how-to-tab-btn:hover { color: var(--fg); }
+.how-to-tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.how-to-tab-panel {
+  display: none;
+  margin-top: 0.75rem;
+}
+.how-to-tab-panel.active { display: block; }
+.how-to-tab-panel .tab-desc {
+  font-size: 12px;
+  color: var(--dim);
+  margin-bottom: 0.35rem;
+  line-height: 1.4;
+  text-align: left;
+}
+.how-to-tab-panel code + .tab-desc {
+  margin-top: 0.75rem;
+}
+.how-to-tab-panel code {
+  display: block;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--fg);
+  background: var(--hover);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.6rem 1rem;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.how-to-tab-panel code:hover {
+  border-color: var(--accent);
+  background: rgba(139, 117, 255, 0.06);
+}
+.how-to-tab-panel code.copied {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.prompt-callout {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: -0.45rem 0 1rem;
+  padding: 0.6rem 0.85rem;
+  overflow: hidden;
+  color: var(--fg);
+  background: rgba(139, 117, 255, 0.08);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 0 22px rgba(139, 117, 255, 0.12);
+}
+.prompt-callout::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(90deg, transparent, rgba(196, 181, 255, 0.18), transparent);
+  animation: callout-shine 2.8s ease-in-out infinite;
+}
+.prompt-callout span {
+  position: relative;
+  z-index: 1;
+}
+.prompt-callout:hover {
+  color: #fff;
+  background: rgba(139, 117, 255, 0.13);
+  text-decoration: none;
+}
+@keyframes callout-shine {
+  55%, 100% { transform: translateX(120%); }
+}
+
+.footer {
+  color: var(--dim);
+  font-size: 11px;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Language switcher — index-specific override */
+.lang-switcher {
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  font-size: 12px;
+}
+
+.copy-btn svg, .hero-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+/* Disclaimer modal */
+.disclaimer-backdrop {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.disclaimer-backdrop.hidden { display: none; }
+.disclaimer-box {
+  background: var(--bg);
+  border: 1px solid #d4605f;
+  border-radius: 6px;
+  max-width: 520px;
+  width: 100%;
+  padding: 2rem;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+.disclaimer-title {
+  color: #d4605f;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+}
+.disclaimer-text {
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+}
+.disclaimer-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 0.6rem 1rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.disclaimer-btn:hover { background: var(--hover); }
+
+/* Providers row */
+.providers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+}
+.providers-label {
+  color: var(--dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  flex-shrink: 0;
+}
+.provider-logo {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.provider-logo:hover {
+  opacity: 1;
+}
+
+/* Small screens — allow scroll as fallback */
+@media (max-height: 620px) {
+  html, body { overflow: auto; }
+}
+@media (max-width: 600px) {
+  html, body { overflow: auto; }
+  .ascii { font-size: 8px; }
+  .skills-grid { grid-template-columns: 1fr; }
+  .providers { gap: 0.4rem; }
+  .providers-label { width: 100%; }
+}
+</style>
+<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
+</head>
+<body>
+
+<!--
+  MONSKILLS — Knowledge Skills for AI Agents
+  https://skills.devnads.com
+
+  Bot-readable. Each skill lives at /<topic>/SKILL.md
+  Fetch any URL and read it into your context.
+
+  All skills:  https://skills.devnads.com/SKILL.md
+-->
+
+<div class="ascii">
+ ███╗   ███╗ ██████╗ ███╗   ██╗███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+ ████╗ ████║██╔═══██╗████╗  ██║██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+ ██╔████╔██║██║   ██║██╔██╗ ██║███████╗█████╔╝ ██║██║     ██║     ███████╗
+ ██║╚██╔╝██║██║   ██║██║╚██╗██║╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+ ██║ ╚═╝ ██║╚██████╔╝██║ ╚████║███████║██║  ██╗██║███████╗███████╗███████║
+ ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
+</div>
+
+<p class="tagline"><span data-i18n="tagline">Skills for developing apps on Monad. Assists LLM with frontend, smart contract deployment, and deploying to production.</span><span class="cursor"></span></p>
+
+<div class="how-to-tabs">
+  <div class="how-to-tab-nav">
+    <button class="how-to-tab-btn active" data-tab="skills" data-i18n="tabs.allAgents">All Agents</button>
+    <button class="how-to-tab-btn" data-tab="plugin" data-i18n="tabs.claudeCode">Claude Code</button>
+    <button class="how-to-tab-btn" data-tab="agent" data-i18n="tabs.tellAgent">Tell your Agent</button>
+  </div>
+  <div class="how-to-tab-panel active" data-tab="skills">
+    <code>npx skills add therealharpaljadeja/monskills</code>
+  </div>
+  <div class="how-to-tab-panel" data-tab="plugin">
+    <p class="tab-desc" data-i18n="plugin.step1">1. Add the marketplace</p>
+    <code>/plugin marketplace add therealharpaljadeja/monskills</code>
+    <p class="tab-desc" data-i18n="plugin.step2">2. Install the plugin</p>
+    <code>/plugin install monskills@monskills</code>
+  </div>
+  <div class="how-to-tab-panel" data-tab="agent">
+    <code data-i18n="agentPrompt">"Open https://skills.devnads.com/install.md and follow its MONSKILLS install instructions. After MONSKILLS is installed, start with the local monskill routing skill."</code>
+  </div>
+</div>
+
+<a class="prompt-callout" href="/prompts">
+  <span data-i18n="promptCallout">NEW: open the Prompt Library for copy-ready Monad app briefs →</span>
+</a>
+
+<div class="providers">
+  <span class="providers-label" data-i18n="providers.label">Works with</span>
+  <img class="provider-logo" src="logos/cursor.png" alt="Cursor" title="Cursor">
+  <img class="provider-logo" src="logos/claude.png" alt="Claude Code" title="Claude Code">
+  <img class="provider-logo" src="logos/openai.png" alt="Codex CLI" title="Codex CLI">
+  <img class="provider-logo" src="logos/gemini.png" alt="Gemini CLI" title="Gemini CLI">
+  <img class="provider-logo" src="logos/github.png" alt="VS Code Copilot" title="VS Code Copilot">
+  <img class="provider-logo" src="logos/kiro.png" alt="Kiro" title="Kiro">
+  <img class="provider-logo" src="logos/opencode.png" alt="OpenCode" title="OpenCode">
+</div>
+
+<div class="lang-switcher">
+  <button class="lang-btn active" data-lang="en">EN</button>
+  <button class="lang-btn" data-lang="zh">中文</button>
+</div>
+
+<div class="footer"><span data-i18n="footer.license">MIT License</span> · <a href="install.md" data-i18n="footer.install">Install</a> · <a href="skill.html?name=scaffold" target="_blank" rel="noopener" data-i18n="footer.browse">Browse Skills</a> · <a href="/prompts" data-i18n="footer.prompts">Prompt Library</a> · <a href="changelog.html" data-i18n="footer.changelog">Changelog</a> · <a href="https://github.com/therealharpaljadeja/monskills" target="_blank" rel="noopener">GitHub</a> · <a href="https://github.com/therealharpaljadeja/monskills" target="_blank" rel="noopener" data-i18n="footer.contribute">Contribute</a></div>
+
+<div id="disclaimer" class="disclaimer-backdrop" aria-hidden="false">
+  <div class="disclaimer-box" role="alertdialog" aria-modal="true">
+    <div class="disclaimer-title" data-i18n="disclaimer.title">Warning</div>
+    <p class="disclaimer-text" data-i18n="disclaimer.text">Do not use the code generated by the AI coding assistant in a production environment without completing your own audits and application of best practices.</p>
+    <button type="button" class="disclaimer-btn" id="disclaimer-accept" data-i18n="disclaimer.accept">I understand</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/i18next@24.2.2/dist/umd/i18next.min.js" integrity="sha384-nW1LQRNjrYL2qBbowzwcZaiLSoaUs+l+DqFm+VVWl9V7mHL5/MQwezV0KsgR808a" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/i18next-browser-languagedetector@8.0.4/dist/umd/i18nextBrowserLanguageDetector.min.js" integrity="sha384-a9Li6d3CxZG58fK5pVKru4dQXhG/frlGpBJVqkuDJIKF6GNFhNnVS8uxUQhqEKW6" crossorigin="anonymous"></script>
+<script src="i18n.js"></script>
+<script>
+// Page-specific translations
+i18next.addResourceBundle('en', 'translation', {
+  tagline: 'Skills for developing apps on Monad. Assists LLM with frontend, smart contract deployment, and deploying to production.',
+  'tabs.allAgents': 'All Agents',
+  'tabs.claudeCode': 'Claude Code',
+  'tabs.tellAgent': 'Tell your Agent',
+  'plugin.step1': '1. Add the marketplace',
+  'plugin.step2': '2. Install the plugin',
+  'promptCallout': 'NEW: open the Prompt Library for copy-ready Monad app briefs →',
+  'providers.label': 'Works with',
+  'footer.license': 'MIT License',
+  'footer.install': 'Install',
+  'footer.browse': 'Browse Skills',
+  'footer.prompts': 'Prompt Library',
+  'footer.changelog': 'Changelog',
+  'footer.contribute': 'Contribute',
+  'disclaimer.title': 'Warning',
+  'disclaimer.text': 'Do not use the code generated by the AI coding assistant in a production environment without completing your own audits and application of best practices.',
+  'disclaimer.accept': 'I understand',
+  'agentPrompt': '"Open https://skills.devnads.com/install.md and follow its MONSKILLS install instructions. After MONSKILLS is installed, start with the local monskill routing skill."'
+}, true, true);
+
+i18next.addResourceBundle('zh', 'translation', {
+  tagline: '在 Monad 上开发应用的技能包。协助 LLM 完成前端开发、智能合约部署和生产环境上线。',
+  'tabs.allAgents': '所有 Agent',
+  'tabs.claudeCode': 'Claude Code',
+  'tabs.tellAgent': '告诉你的 Agent',
+  'plugin.step1': '1. 添加插件市场',
+  'plugin.step2': '2. 安装插件',
+  'promptCallout': 'NEW: 打开提示词库，获取可直接复制的 Monad 应用简介 →',
+  'providers.label': '兼容平台',
+  'footer.license': 'MIT 许可证',
+  'footer.install': '安装',
+  'footer.browse': '浏览技能',
+  'footer.prompts': '提示词库',
+  'footer.changelog': '更新日志',
+  'footer.contribute': '贡献代码',
+  'disclaimer.title': '警告',
+  'disclaimer.text': '请勿在未完成安全审计和最佳实践检查的情况下，将 AI 编程助手生成的代码用于生产环境。',
+  'disclaimer.accept': '我已了解',
+  'agentPrompt': '"打开 https://skills.devnads.com/install.md 并按照其中的 MONSKILLS 安装说明操作。安装 MONSKILLS 后，从本地 monskill 路由技能开始。"'
+}, true, true);
+
+function applyPageTranslations() {
+  applyI18nAttributes();
+  var desc = i18next.t('tagline');
+  document.querySelector('meta[name="description"]').setAttribute('content', desc);
+  document.querySelector('meta[property="og:description"]').setAttribute('content', desc);
+  document.querySelectorAll('a[href^="skill.html"]').forEach(function(a) {
+    var u = new URL(a.href, window.location.origin);
+    u.searchParams.set('lang', getLang());
+    a.href = u.toString();
+  });
+}
+
+initLangSwitcher(function() {
+  applyPageTranslations();
+});
+applyPageTranslations();
+</script>
+<script>
+// ASCII hero animation — CRT flicker-on effect
+(function() {
+  const ascii = document.querySelector('.ascii');
+  const raw = ascii.textContent;
+  const lines = raw.split('\n').filter(l => l.length > 0);
+  const maxLen = Math.max(...lines.map(l => l.length));
+  const padded = lines.map(l => l.padEnd(maxLen));
+
+  // Wrap each non-space character in a span using safe DOM APIs
+  ascii.textContent = '';
+  for (let row = 0; row < padded.length; row++) {
+    for (let col = 0; col < maxLen; col++) {
+      const ch = padded[row][col] || ' ';
+      if (ch === ' ') {
+        ascii.appendChild(document.createTextNode(' '));
+      } else {
+        const span = document.createElement('span');
+        span.className = 'ch';
+        span.textContent = ch;
+        ascii.appendChild(span);
+      }
+    }
+    if (row < padded.length - 1) ascii.appendChild(document.createTextNode('\n'));
+  }
+
+  const chars = ascii.querySelectorAll('.ch');
+  chars.forEach(ch => {
+    ch.style.opacity = '0';
+    ch.style.transition = 'opacity 50ms linear';
+  });
+
+  // Random staggered appear — chunks pop in across the art
+  Array.from(chars)
+    .sort(() => Math.random() - 0.5)
+    .forEach((ch, index) => {
+      window.setTimeout(() => {
+        ch.style.opacity = '1';
+      }, 300 + index * 2);
+    });
+
+  window.setTimeout(() => {
+    // Apply gradient-on-text for shine
+    ascii.style.background = "linear-gradient(110deg, #8B75FF 40%, #c4b5ff 50%, #8B75FF 60%)";
+    ascii.style.backgroundSize = "300% 100%";
+    ascii.style.backgroundPosition = "100% 0";
+    ascii.style.webkitBackgroundClip = "text";
+    ascii.style.backgroundClip = "text";
+    ascii.style.webkitTextFillColor = "transparent";
+    ascii.style.color = "transparent";
+    ascii.animate(
+      [{ backgroundPosition: "100% 0" }, { backgroundPosition: "0% 0" }],
+      { duration: 2000, easing: "ease-in-out", iterations: Infinity, delay: 3000 }
+    );
+  }, 300 + chars.length * 2 + 100);
+})();
+
+// Disclaimer
+const disclaimer = document.getElementById('disclaimer');
+const disclaimerAccept = document.getElementById('disclaimer-accept');
+if (sessionStorage.getItem('disclaimer-accepted')) {
+  disclaimer.classList.add('hidden');
+  disclaimer.setAttribute('aria-hidden', 'true');
+}
+disclaimerAccept.addEventListener('click', () => {
+  disclaimer.classList.add('hidden');
+  disclaimer.setAttribute('aria-hidden', 'true');
+  sessionStorage.setItem('disclaimer-accepted', '1');
+});
+
+// Tabs
+document.querySelectorAll('.how-to-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.how-to-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.how-to-tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector('.how-to-tab-panel[data-tab="' + tab + '"]').classList.add('active');
+  });
+});
+
+// Click to copy tab content
+document.querySelectorAll('.how-to-tab-panel code').forEach(code => {
+  const orig = code.textContent;
+  let timer;
+  code.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(orig); } catch(err) {
+      const t = document.createElement('textarea'); t.value = orig; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t);
+    }
+    clearTimeout(timer);
+    code.textContent = i18next.t('copy.copied');
+    code.classList.add('copied');
+    timer = setTimeout(() => { code.textContent = orig; code.classList.remove('copied'); }, 1500);
+  });
+});
+
+
+</script>
+</body>
+</html>

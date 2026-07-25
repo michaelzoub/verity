@@ -1,0 +1,8 @@
+{
+  "name": "verity",
+  "private": true,
+  "packageManager": "npm@10.9.8",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": { "generate": "npm run generate --workspaces --if-present", "dev:mock": "turbo dev --filter=@verity/web", "dev:full": "turbo dev", "dev:web": "npm run dev --workspace=@verity/web", "dev:api": "npm run dev --workspace=@verity/api", "build": "npm run build --workspace=@verity/web", "test": "npm run test --workspaces --if-present", "test:contracts": "cd contracts && forge test", "test:e2e": "echo 'Playwright suite will run once browsers are installed'", "typecheck": "npm run typecheck --workspaces --if-present", "lint": "npm run lint --workspaces --if-present", "artifacts:check": "node scripts/check-artifacts.mjs" },
+  "devDependencies": { "turbo": "^2.5.5", "typescript": "^5.7.3" }
+}

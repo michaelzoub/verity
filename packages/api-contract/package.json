@@ -1,0 +1,1 @@
+{ "name": "@verity/api-contract", "private": true, "version": "0.1.0", "main": "./src/index.ts", "types": "./src/index.ts", "scripts": { "typecheck": "tsc --noEmit --skipLibCheck --target ES2020 --moduleResolution bundler --module esnext src/index.ts", "lint": "echo contract lint" }, "dependencies": { "zod": "^3.24.1" } }

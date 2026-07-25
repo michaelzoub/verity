@@ -1,0 +1,179 @@
+openapi: 3.0.3
+info:
+  title: MONSKILLS API
+  description: API for serving Monad development skills and receiving consent-gated feedback.
+  version: 1.0.0
+  contact:
+    name: Harpalsinh Jadeja
+    url: https://github.com/therealharpaljadeja/monskills
+
+servers:
+  - url: https://skills.devnads.com
+    description: Production
+
+paths:
+  /api/skill:
+    get:
+      summary: Get a skill's markdown content
+      description: |
+        Returns the SKILL.md file for the requested skill. Skill fetches do not write download events or request metadata to the database.
+      parameters:
+        - name: name
+          in: query
+          required: true
+          description: The skill identifier
+          schema:
+            type: string
+            enum:
+              - monskill
+              - scaffold
+              - why-monad
+              - addresses
+              - wallet
+              - wallet-integration
+              - gas
+              - concepts
+              - tooling-and-infra
+              - indexer
+      responses:
+        "200":
+          description: Skill markdown content
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                example: text/markdown; charset=utf-8
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+                example: "*"
+            Cache-Control:
+              schema:
+                type: string
+                example: public, s-maxage=60, stale-while-revalidate=300
+          content:
+            text/markdown:
+              schema:
+                type: string
+        "404":
+          description: Skill not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Skill not found
+
+  /{skill}:
+    get:
+      summary: Skill shorthand URL
+      description: |
+        Convenience route that rewrites to /api/skill?name={skill}.
+        Example: GET /scaffold -> served by /api/skill?name=scaffold
+      parameters:
+        - name: skill
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - scaffold
+              - why-monad
+              - addresses
+              - wallet
+              - wallet-integration
+              - gas
+              - concepts
+              - tooling-and-infra
+              - indexer
+      responses:
+        "200":
+          description: Skill markdown content (same as /api/skill)
+          content:
+            text/markdown:
+              schema:
+                type: string
+
+  /{skill}/SKILL.md:
+    get:
+      summary: Skill direct file URL
+      description: |
+        Direct path to skill file, routed through the same skill-serving function.
+        Example: GET /scaffold/SKILL.md -> served by /api/skill?name=scaffold
+      parameters:
+        - name: skill
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - scaffold
+              - why-monad
+              - addresses
+              - wallet
+              - wallet-integration
+              - gas
+              - concepts
+              - tooling-and-infra
+              - indexer
+      responses:
+        "200":
+          description: Skill markdown content (same as /api/skill)
+          content:
+            text/markdown:
+              schema:
+                type: string
+
+  /SKILL.md:
+    get:
+      summary: Root skill index
+      description: Returns the master SKILL.md index file.
+      responses:
+        "200":
+          description: Master skill index markdown
+          content:
+            text/markdown:
+              schema:
+                type: string
+
+  /api/feedback:
+    post:
+      summary: Submit consent-gated feedback
+      description: |
+        Stores sanitized feedback submitted by the /feedback slash command. The endpoint does not store raw IPs, hashed IPs, or IP-derived identifiers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - source
+                - message
+              properties:
+                source:
+                  type: string
+                  enum: [agent, user]
+                message:
+                  type: string
+                  maxLength: 5000
+                context:
+                  type: string
+                  maxLength: 4000
+                skill:
+                  type: string
+                category:
+                  type: string
+                severity:
+                  type: string
+      responses:
+        "200":
+          description: Feedback accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  id:
+                    type: integer
