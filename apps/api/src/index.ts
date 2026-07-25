@@ -91,14 +91,24 @@ const publicSubmission = (submission: Submission) => {
   } = submission;
   return safe;
 };
-const cors = (res: ServerResponse) => {
-  res.setHeader("access-control-allow-origin", process.env.WEB_URL!);
+const configuredWebOrigins = process.env.WEB_URL!
+  .split(",")
+  .map((value) => value.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+const cors = (req: IncomingMessage, res: ServerResponse) => {
+  const requestOrigin = req.headers.origin?.trim().replace(/\/+$/, "");
+  // Keep the bearer-token API closed to arbitrary websites. WEB_URL may be a
+  // comma-separated allowlist so preview and production web deployments can
+  // use the same API without weakening the authentication boundary.
+  if (requestOrigin && configuredWebOrigins.includes(requestOrigin)) {
+    res.setHeader("access-control-allow-origin", requestOrigin);
+  }
   res.setHeader("access-control-allow-headers", "authorization,content-type,idempotency-key,x-verity-worker-signature,x-verity-platform-signature");
   res.setHeader("access-control-allow-methods", "GET,POST,OPTIONS");
   res.setHeader("vary", "origin");
 };
-const send = (res: ServerResponse, status: number, body: unknown) => {
-  cors(res); res.writeHead(status, { "content-type": "application/json" });
+const send = (req: IncomingMessage, res: ServerResponse, status: number, body: unknown) => {
+  cors(req, res); res.writeHead(status, { "content-type": "application/json" });
   res.end(status === 204 ? undefined : JSON.stringify(body));
 };
 const safeClientErrors = new Set([
@@ -309,39 +319,39 @@ async function main() {
 
   const server = createServer(async (req, res) => {
     try {
-      if (req.method === "OPTIONS") return send(res, 204, {});
+      if (req.method === "OPTIONS") return send(req, res, 204, {});
       await store.load();
       const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
       const parts = url.pathname.split("/").filter(Boolean);
       const parsed = req.method === "GET" ? { raw: "", value: {} } : await readBody(req);
       const { raw, value } = parsed;
 
-      if (req.method === "GET" && url.pathname === "/health") return send(res, 200, { ok: true, mode: "real", chainId: 10143, factoryAddress });
+      if (req.method === "GET" && url.pathname === "/health") return send(req, res, 200, { ok: true, mode: "real", chainId: 10143, factoryAddress });
       if (req.method === "GET" && url.pathname === "/v1/auth/me") {
         const auth = await authenticateCompany(req, store);
-        return send(res, 200, { company: { id: auth.company.id }, privySubject: auth.privySubject });
+        return send(req, res, 200, { company: { id: auth.company.id }, privySubject: auth.privySubject });
       }
       if (req.method === "GET" && url.pathname === "/api/challenges") {
         const challenges = await store.listChallenges(true);
-        return send(res, 200, { challenges: challenges.map(publicChallenge) });
+        return send(req, res, 200, { challenges: challenges.map(publicChallenge) });
       }
       if (req.method === "GET" && parts[0] === "api" && parts[1] === "challenges" && parts[2] && parts.length === 3) {
         const challenge = (await store.listChallenges()).find(value => value.id === parts[2]);
-        return challenge?.indexed ? send(res, 200, publicChallenge(challenge)) : send(res, 404, { error: "challenge_not_found" });
+        return challenge?.indexed ? send(req, res, 200, publicChallenge(challenge)) : send(req, res, 404, { error: "challenge_not_found" });
       }
       if (req.method === "GET" && parts[0] === "api" && parts[1] === "challenges" && parts[2] && parts[3] === "starter-bundle") {
         const challenge = await store.getChallenge(parts[2]);
-        return challenge?.indexed ? send(res, 200, { files: starterBundle(challenge.publicSpec) }) : send(res, 404, { error: "challenge_not_found" });
+        return challenge?.indexed ? send(req, res, 200, { files: starterBundle(challenge.publicSpec) }) : send(req, res, 404, { error: "challenge_not_found" });
       }
       if (req.method === "POST" && parts[0] === "api" && parts[1] === "challenges" && parts[2] && parts[3] === "test-submission") {
         const challenge = await store.getChallenge(parts[2]);
-        if (!challenge?.indexed) return send(res, 404, { error: "challenge_not_found" });
-        return send(res, 200, await publicTest(challenge, value));
+        if (!challenge?.indexed) return send(req, res, 404, { error: "challenge_not_found" });
+        return send(req, res, 200, await publicTest(challenge, value));
       }
       if (req.method === "GET" && url.pathname === "/api/company/challenges") {
         const auth = await authenticateCompany(req, store);
         const challenges = await store.listChallenges();
-        return send(res, 200, { challenges: challenges.filter(challenge => challenge.companyId === auth.company.id).map(publicChallenge) });
+        return send(req, res, 200, { challenges: challenges.filter(challenge => challenge.companyId === auth.company.id).map(publicChallenge) });
       }
       if (req.method === "GET" && parts[0] === "api" && parts[1] === "submissions" && parts[2]) {
         const submission = await store.getSubmission(parts[2]);
@@ -358,31 +368,31 @@ async function main() {
           const challenge = await store.getChallenge(submission.challengeId);
           if (challenge?.indexed) await dispatchSettlement(submission, challenge);
         }
-        return submission ? send(res, 200, { submission: publicSubmission(submission) }) : send(res, 404, { error: "submission_not_found" });
+        return submission ? send(req, res, 200, { submission: publicSubmission(submission) }) : send(req, res, 404, { error: "submission_not_found" });
       }
       if (req.method === "POST" && url.pathname === "/api/graders/preflight") {
         await authenticateCompany(req, store); const input = graderPreflightSchema.parse(value);
         const validation = await preflight(input);
-        return send(res, 200, { ok: true, entrypoint: input.language === "python" ? "grade" : "default", validationResult: validation.result });
+        return send(req, res, 200, { ok: true, entrypoint: input.language === "python" ? "grade" : "default", validationResult: validation.result });
       }
       if (req.method === "POST" && url.pathname === "/api/challenges") {
         const auth = await authenticateCompany(req, store); const input = createChallengeSchema.parse(value);
         const creationKey = req.headers["idempotency-key"];
         if (typeof creationKey !== "string" || !/^[A-Za-z0-9_-]{16,128}$/.test(creationKey)) {
-          return send(res, 400, { error: "invalid_idempotency_key" });
+          return send(req, res, 400, { error: "invalid_idempotency_key" });
         }
         const creationRequestHash = sha256Hex(Buffer.from(raw));
         const existing = await store.findChallengeByCreationKey(auth.company.id, creationKey);
         if (existing) {
           if (existing.creationRequestHash !== creationRequestHash) {
-            return send(res, 409, { error: "idempotency_key_payload_mismatch" });
+            return send(req, res, 409, { error: "idempotency_key_payload_mismatch" });
           }
           const existingTerms = scoreTerms(existing.publicSpec.scoring);
           const data = encodeFunctionData({
             abi: factoryArtifact.abi, functionName: "createChallenge",
             args: [keccak256(stringToHex(existing.id)), existingTerms.pass, existing.maxSubmissions, BigInt(Math.floor(new Date(existing.deadline).getTime() / 1000)), backend.address, existing.graderCommitment, existing.graderVersion],
           });
-          return send(res, 200, { challenge: publicChallenge(existing), walletTransaction: { to: factoryAddress, data, value: existing.rewardWei, chainId: 10143 }, idempotentReplay: true });
+          return send(req, res, 200, { challenge: publicChallenge(existing), walletTransaction: { to: factoryAddress, data, value: existing.rewardWei, chainId: 10143 }, idempotentReplay: true });
         }
         if (new Date(input.deadline).getTime() <= Date.now()) throw new Error("deadline_must_be_in_future");
         const id = randomUUID(); const graderObjectKey = `graders/${id}.${input.language === "typescript" ? "ts" : input.language === "javascript" ? "js" : "py"}`;
@@ -413,11 +423,11 @@ async function main() {
           abi: factoryArtifact.abi, functionName: "createChallenge",
           args: [keccak256(stringToHex(id)), terms.pass, challenge.maxSubmissions, BigInt(Math.floor(new Date(challenge.deadline).getTime() / 1000)), backend.address, challenge.graderCommitment, challenge.graderVersion],
         });
-        return send(res, 201, { challenge: publicChallenge(challenge), walletTransaction: { to: factoryAddress, data, value: challenge.rewardWei, chainId: 10143 } });
+        return send(req, res, 201, { challenge: publicChallenge(challenge), walletTransaction: { to: factoryAddress, data, value: challenge.rewardWei, chainId: 10143 } });
       }
       if (req.method === "POST" && parts[0] === "api" && parts[1] === "challenges" && parts[3] === "funding-confirmed") {
         const auth = await authenticateCompany(req, store); const challenge = await store.getChallenge(parts[2]);
-        if (!challenge) return send(res, 404, { error: "challenge_not_found" });
+        if (!challenge) return send(req, res, 404, { error: "challenge_not_found" });
         requireCompanyOwnership(challenge.companyId, auth.company.id);
         const transactionHash = String((value as any).transactionHash) as `0x${string}`;
         const [receipt, transaction] = await Promise.all([
@@ -428,7 +438,7 @@ async function main() {
           || transaction.to?.toLowerCase() !== factoryAddress.toLowerCase()
           || transaction.from.toLowerCase() !== challenge.intendedFundingWallet.toLowerCase()
           || transaction.value !== BigInt(challenge.rewardWei)
-        ) return send(res, 409, { error: "funding_not_confirmed" });
+        ) return send(req, res, 409, { error: "funding_not_confirmed" });
         const event = receipt.logs.filter(log => log.address.toLowerCase() === factoryAddress.toLowerCase()).map(log => {
           try { return decodeEventLog({ abi: factoryArtifact.abi, ...log }); } catch { return undefined; }
         }).find((log: any) => log?.eventName === "ChallengeDeployed" && log.args.challengeId?.toLowerCase() === keccak256(stringToHex(challenge.id)).toLowerCase()) as any;
@@ -442,14 +452,14 @@ async function main() {
           || event.args.authorizedBackend.toLowerCase() !== backend.address.toLowerCase()
           || event.args.graderCommitment.toLowerCase() !== challenge.graderCommitment?.toLowerCase()
           || event.args.graderVersion !== challenge.graderVersion
-        ) return send(res, 400, { error: "wrong_challenge_deployment" });
-        if (!await publicClient.getBytecode({ address: event.args.escrow })) return send(res, 409, { error: "escrow_bytecode_missing" });
+        ) return send(req, res, 400, { error: "wrong_challenge_deployment" });
+        if (!await publicClient.getBytecode({ address: event.args.escrow })) return send(req, res, 409, { error: "escrow_bytecode_missing" });
         challenge.contractAddress = event.args.escrow; challenge.onchainChallengeId = event.args.challengeId;
         challenge.requester = transaction.from; challenge.transactionHash = transactionHash;
         challenge.fundedAmountWei = transaction.value.toString();
         challenge.fundingBlockNumber = Number(receipt.blockNumber);
         challenge.deploymentBlock = Number(receipt.blockNumber); await store.saveChallenge(challenge);
-        return send(res, 202, {
+        return send(req, res, 202, {
           challenge: publicChallenge(challenge),
           status: "AWAITING_INDEX",
           funding: {
@@ -463,15 +473,15 @@ async function main() {
       }
       if (req.method === "POST" && parts[0] === "api" && parts[1] === "challenges" && parts[3] === "refund-transaction") {
         const auth = await authenticateCompany(req, store); const challenge = await store.getChallenge(parts[2]);
-        if (!challenge?.contractAddress) return send(res, 404, { error: "challenge_not_found" });
+        if (!challenge?.contractAddress) return send(req, res, 404, { error: "challenge_not_found" });
         requireCompanyOwnership(challenge.companyId, auth.company.id);
-        if (Date.now() <= new Date(challenge.deadline).getTime()) return send(res, 409, { error: "challenge_not_expired" });
+        if (Date.now() <= new Date(challenge.deadline).getTime()) return send(req, res, 409, { error: "challenge_not_expired" });
         const [paid, refunded] = await Promise.all([
           publicClient.readContract({ address: challenge.contractAddress as `0x${string}`, abi: escrowArtifact.abi, functionName: "paid" }),
           publicClient.readContract({ address: challenge.contractAddress as `0x${string}`, abi: escrowArtifact.abi, functionName: "refunded" }),
         ]);
-        if (paid || refunded) return send(res, 409, { error: "challenge_already_resolved" });
-        return send(res, 200, { walletTransaction: {
+        if (paid || refunded) return send(req, res, 409, { error: "challenge_already_resolved" });
+        return send(req, res, 200, { walletTransaction: {
           to: challenge.contractAddress,
           data: encodeFunctionData({ abi: escrowArtifact.abi, functionName: "refundExpired" }),
           value: "0", chainId: 10143,
@@ -479,41 +489,41 @@ async function main() {
       }
       if (req.method === "POST" && parts[0] === "api" && parts[1] === "challenges" && parts[3] === "wallet-nonces") {
         const challenge = await store.getChallenge(parts[2]);
-        if (!challenge?.indexed || challenge.status !== "live" || Date.now() >= new Date(challenge.deadline).getTime()) return send(res, 409, { error: "challenge_not_live" });
+        if (!challenge?.indexed || challenge.status !== "live" || Date.now() >= new Date(challenge.deadline).getTime()) return send(req, res, 409, { error: "challenge_not_live" });
         const nonce = randomUUID(), expiresAt = new Date(Date.now() + 300_000).toISOString();
         await store.saveWalletNonce({ nonce, purpose: "agent_submission", challengeId: challenge.id, expiresAt });
-        return send(res, 201, { nonce, expiresAt, message: walletMessage(challenge.id, nonce, expiresAt), requiredCallValidation: challenge.requiredFunctions.length ? "platform_execution_only" : "not_required" });
+        return send(req, res, 201, { nonce, expiresAt, message: walletMessage(challenge.id, nonce, expiresAt), requiredCallValidation: challenge.requiredFunctions.length ? "platform_execution_only" : "not_required" });
       }
       if (req.method === "POST" && parts[0] === "api" && parts[1] === "challenges" && parts[3] === "submissions") {
         const challenge = await store.getChallenge(parts[2]);
-        if (!challenge?.indexed || challenge.status !== "live") return send(res, 409, { error: "challenge_not_live" });
+        if (!challenge?.indexed || challenge.status !== "live") return send(req, res, 409, { error: "challenge_not_live" });
         if (validHmac(req, raw, "x-verity-platform-signature", platformSecret)) {
           const input = platformSubmissionSchema.parse(value);
-          return send(res, 202, { submission: publicSubmission(await createSubmission(challenge, input, input.trustedFunctionCallTrace as TrustedFunctionCall[], input.platformExecutionId)) });
+          return send(req, res, 202, { submission: publicSubmission(await createSubmission(challenge, input, input.trustedFunctionCallTrace as TrustedFunctionCall[], input.platformExecutionId)) });
         }
-        return send(res, 202, { submission: publicSubmission(await createSubmission(challenge, value, [])) });
+        return send(req, res, 202, { submission: publicSubmission(await createSubmission(challenge, value, [])) });
       }
       if (req.method === "POST" && parts[0] === "internal" && parts[1] === "platform-submissions" && parts[2]) {
-        if (!validHmac(req, raw, "x-verity-platform-signature", platformSecret)) return send(res, 401, { error: "platform_runtime_unauthorized" });
-        const challenge = await store.getChallenge(parts[2]); if (!challenge?.indexed || challenge.status !== "live") return send(res, 409, { error: "challenge_not_live" });
+        if (!validHmac(req, raw, "x-verity-platform-signature", platformSecret)) return send(req, res, 401, { error: "platform_runtime_unauthorized" });
+        const challenge = await store.getChallenge(parts[2]); if (!challenge?.indexed || challenge.status !== "live") return send(req, res, 409, { error: "challenge_not_live" });
         const input = platformSubmissionSchema.parse(value);
-        return send(res, 202, { submission: publicSubmission(await createSubmission(challenge, input, input.trustedFunctionCallTrace as TrustedFunctionCall[], input.platformExecutionId)) });
+        return send(req, res, 202, { submission: publicSubmission(await createSubmission(challenge, input, input.trustedFunctionCallTrace as TrustedFunctionCall[], input.platformExecutionId)) });
       }
       if (req.method === "POST" && url.pathname === "/internal/jobs/claim") {
-        if (!validHmac(req, raw, "x-verity-worker-signature", workerSecret)) return send(res, 401, { error: "worker_unauthorized" });
-        const job = await store.dequeue(); if (!job) return send(res, 204, {});
+        if (!validHmac(req, raw, "x-verity-worker-signature", workerSecret)) return send(req, res, 401, { error: "worker_unauthorized" });
+        const job = await store.dequeue(); if (!job) return send(req, res, 204, {});
         const submission = await store.getSubmission(job.submissionId); const challenge = submission && await store.getChallenge(submission.challengeId);
-        if (!submission || !challenge) return send(res, 409, { error: "job_missing_records" });
+        if (!submission || !challenge) return send(req, res, 409, { error: "job_missing_records" });
         submission.status = "GRADING"; await store.saveSubmission(submission);
         job.claimedAt = new Date().toISOString(); const { sourceBase64: _source, ...workerGrader } = challenge.grader;
         job.grader = workerGrader; job.solutionObjectKey = submission.objectKey; await store.updateJob(job);
-        return send(res, 200, { job });
+        return send(req, res, 200, { job });
       }
       if (req.method === "POST" && url.pathname === "/internal/worker-results") {
-        if (!validHmac(req, raw, "x-verity-worker-signature", workerSecret)) return send(res, 401, { error: "worker_unauthorized" });
+        if (!validHmac(req, raw, "x-verity-worker-signature", workerSecret)) return send(req, res, 401, { error: "worker_unauthorized" });
         const result = workerResultSchema.parse(value); const job = store.jobs.find(item => item.id === result.jobId);
         const submission = await store.getSubmission(result.submissionId); const challenge = await store.getChallenge(result.challengeId);
-        if (!job || !submission || !challenge || job.status !== "running" || job.submissionId !== submission.id || job.attempts !== result.attempt || submission.submissionHash !== result.submissionHash || submission.agentWallet.toLowerCase() !== result.agentWallet.toLowerCase() || challenge.graderCommitment !== result.graderCommitment || challenge.graderVersion !== result.graderVersion) return send(res, 409, { error: "forged_stale_or_mismatched_worker_result" });
+        if (!job || !submission || !challenge || job.status !== "running" || job.submissionId !== submission.id || job.attempts !== result.attempt || submission.submissionHash !== result.submissionHash || submission.agentWallet.toLowerCase() !== result.agentWallet.toLowerCase() || challenge.graderCommitment !== result.graderCommitment || challenge.graderVersion !== result.graderVersion) return send(req, res, 409, { error: "forged_stale_or_mismatched_worker_result" });
         if (result.outcome === "SCORED") {
           let scaled: bigint;
           try {
@@ -522,23 +532,23 @@ async function main() {
           } catch {
             submission.outcome = "GRADER_ERROR"; submission.status = "GRADER_ERROR";
             submission.failureReason = "GRADER_SCORE_OUT_OF_RANGE"; submission.gradingSandboxId = result.sandboxId;
-            if (!await store.completeJob(job.id, result.attempt, submission)) return send(res, 409, { error: "worker_result_already_consumed" });
-            return send(res, 202, { submission: publicSubmission(submission) });
+            if (!await store.completeJob(job.id, result.attempt, submission)) return send(req, res, 409, { error: "worker_result_already_consumed" });
+            return send(req, res, 202, { submission: publicSubmission(submission) });
           }
           submission.score = result.score; submission.scoreScaled = scaled.toString(); submission.graderResult = result.graderResult;
         } else submission.failureReason = result.errorCode ?? "GRADER_ERROR";
         submission.outcome = result.outcome;
         submission.gradingSandboxId = result.sandboxId;
         submission.status = result.outcome === "SCORED" ? "GRADED" : result.outcome === "UNEVALUABLE" ? "UNEVALUABLE" : result.outcome === "GRADING_TIMEOUT" ? "TIMEOUT" : "GRADER_ERROR";
-        if (!await store.completeJob(job.id, result.attempt, submission)) return send(res, 409, { error: "worker_result_already_consumed" });
+        if (!await store.completeJob(job.id, result.attempt, submission)) return send(req, res, 409, { error: "worker_result_already_consumed" });
         if (result.outcome === "SCORED") await dispatchSettlement(submission, challenge);
-        return send(res, 202, { submission: publicSubmission(submission) });
+        return send(req, res, 202, { submission: publicSubmission(submission) });
       }
-      return send(res, 404, { error: "not_found" });
+      return send(req, res, 404, { error: "not_found" });
     } catch (error) {
-      if (error instanceof AuthError) return send(res, error.status, { error: error.code });
+      if (error instanceof AuthError) return send(req, res, error.status, { error: error.code });
       const safe = clientError(error);
-      return send(res, safe.status, { error: safe.code });
+      return send(req, res, safe.status, { error: safe.code });
     }
   });
   // Bind IPv4 explicitly. The worker uses 127.0.0.1 in local development;

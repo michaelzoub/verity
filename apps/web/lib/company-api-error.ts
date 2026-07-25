@@ -1,12 +1,15 @@
 const MAX_ERROR_TEXT = 800;
 
 export function companyApiEndpoint(path: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "");
-  if (!baseUrl) {
+  const configuredUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (!configuredUrl) {
     throw new Error(
       `API configuration error for ${path}: NEXT_PUBLIC_API_URL is required.`,
     );
   }
+  const baseUrl = (configuredUrl.startsWith("http://") || configuredUrl.startsWith("https://")
+    ? configuredUrl
+    : `https://${configuredUrl}`).replace(/\/+$/, "");
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 }
 

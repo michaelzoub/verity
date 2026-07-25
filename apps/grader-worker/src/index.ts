@@ -13,6 +13,7 @@ const required = [
 ];
 for (const key of required) if (!process.env[key]) throw new Error(`${key} is required`);
 const apiUrl = process.env.API_URL!, secret = process.env.WORKER_SHARED_SECRET!, store = new SupabaseStore();
+const retryState = { delayMs: 250, reportedUnavailable: false };
 const headers = (raw: string) => ({
   "content-type": "application/json",
   "x-verity-worker-signature": createHmac("sha256", secret).update(raw).digest("hex"),
@@ -34,6 +35,19 @@ async function unevaluable(job: GradingJob) {
     graderCommitment: job.graderCommitment, graderVersion: job.graderVersion,
     attempt: job.attempts, outcome: "UNEVALUABLE", errorCode: "SUBMISSION_INVALID",
   });
+}
+function isConnectionRefused(error: unknown) {
+  return error instanceof TypeError
+    && error.cause !== undefined
+    && typeof error.cause === "object"
+    && error.cause !== null
+    && "code" in error.cause
+    && error.cause.code === "ECONNREFUSED";
+}
+function scheduleRetry() {
+  const delay = retryState.delayMs;
+  retryState.delayMs = Math.min(delay * 2, 2000);
+  return setTimeout(loop, delay);
 }
 async function loop() {
   try {
@@ -114,7 +128,16 @@ async function loop() {
     };
     const response = await call("/internal/worker-results", callback);
     if (!response.ok && response.status !== 409) throw new Error(`worker callback ${response.status}`);
+    retryState.delayMs = 250;
+    retryState.reportedUnavailable = false;
   } catch (error) {
+    if (isConnectionRefused(error)) {
+      if (!retryState.reportedUnavailable) {
+        console.warn(`worker waiting for API at ${apiUrl}`);
+        retryState.reportedUnavailable = true;
+      }
+      return scheduleRetry();
+    }
     console.error("worker unavailable", error);
   }
   return setTimeout(loop, 250);
