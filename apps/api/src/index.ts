@@ -322,10 +322,11 @@ async function main() {
         return send(res, 200, { company: { id: auth.company.id }, privySubject: auth.privySubject });
       }
       if (req.method === "GET" && url.pathname === "/api/challenges") {
-        return send(res, 200, { challenges: [...store.challenges.values()].filter(challenge => challenge.indexed).map(publicChallenge) });
+        const challenges = await store.listChallenges(true);
+        return send(res, 200, { challenges: challenges.map(publicChallenge) });
       }
       if (req.method === "GET" && parts[0] === "api" && parts[1] === "challenges" && parts[2] && parts.length === 3) {
-        const challenge = await store.getChallenge(parts[2]);
+        const challenge = (await store.listChallenges()).find(value => value.id === parts[2]);
         return challenge?.indexed ? send(res, 200, publicChallenge(challenge)) : send(res, 404, { error: "challenge_not_found" });
       }
       if (req.method === "GET" && parts[0] === "api" && parts[1] === "challenges" && parts[2] && parts[3] === "starter-bundle") {
@@ -339,7 +340,8 @@ async function main() {
       }
       if (req.method === "GET" && url.pathname === "/api/company/challenges") {
         const auth = await authenticateCompany(req, store);
-        return send(res, 200, { challenges: [...store.challenges.values()].filter(challenge => challenge.companyId === auth.company.id).map(publicChallenge) });
+        const challenges = await store.listChallenges();
+        return send(res, 200, { challenges: challenges.filter(challenge => challenge.companyId === auth.company.id).map(publicChallenge) });
       }
       if (req.method === "GET" && parts[0] === "api" && parts[1] === "submissions" && parts[2]) {
         const submission = await store.getSubmission(parts[2]);
@@ -540,6 +542,8 @@ async function main() {
       return send(res, safe.status, { error: safe.code });
     }
   });
-  server.listen(port, () => console.log(`Verity API listening on http://localhost:${port}`));
+  // Bind IPv4 explicitly. The worker uses 127.0.0.1 in local development;
+  // Node may otherwise select an IPv6-only listener on some machines.
+  server.listen(port, "0.0.0.0", () => console.log(`Verity API listening on http://0.0.0.0:${port}`));
 }
 void main();

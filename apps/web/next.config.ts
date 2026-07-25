@@ -7,11 +7,16 @@ loadEnvConfig(fileURLToPath(new URL(".", import.meta.url)));
 // Vercel injects these values at build time. Normalize the toggle because a
 // trailing space or different casing should not silently disable the whole
 // company publishing flow.
-const companyAuthEnabled =
-  (process.env.PRIVY_AUTH_ENABLED ?? process.env.NEXT_PUBLIC_PRIVY_AUTH_ENABLED ?? "")
-    .trim()
-    .toLowerCase() === "true";
-const privyAppId = (process.env.PRIVY_APP_ID ?? process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? "").trim();
+const authToggle = (process.env.PRIVY_AUTH_ENABLED ?? process.env.NEXT_PUBLIC_PRIVY_AUTH_ENABLED ?? "")
+  .trim()
+  .toLowerCase();
+// Prefer a non-empty value because some deployment platforms expose an empty
+// server variable while the public variable is configured. The app ID is
+// public, so it is also a safe fallback for enabling the browser provider.
+const privyAppId = [process.env.PRIVY_APP_ID, process.env.NEXT_PUBLIC_PRIVY_APP_ID]
+  .map(value => value?.trim())
+  .find(Boolean) ?? "";
+const companyAuthEnabled = Boolean(privyAppId) && authToggle !== "false";
 // Set the public values too: client components are also rendered by the dev server.
 process.env.NEXT_PUBLIC_PRIVY_APP_ID = companyAuthEnabled ? privyAppId : "";
 process.env.NEXT_PUBLIC_PRIVY_AUTH_ENABLED = companyAuthEnabled ? "true" : "false";

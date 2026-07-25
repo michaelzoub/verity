@@ -57,6 +57,14 @@ export class SupabaseStore {
   }
   async saveChallenge(value: ChallengeRecord) { this.challenges.set(value.id, value); await this.record("challenge", value.id, value); }
   async getChallenge(id: string) { return this.challenges.get(id); }
+  async listChallenges(indexedOnly = false) {
+    const rows = indexedOnly
+      ? await this.sql`select id,value from verity_records where kind='challenge' and coalesce((value->>'indexed')::boolean,false) = true order by updated_at desc`
+      : await this.sql`select id,value from verity_records where kind='challenge' order by updated_at desc`;
+    const challenges = rows.map(row => row.value as ChallengeRecord);
+    for (const challenge of challenges) this.challenges.set(challenge.id, challenge);
+    return challenges;
+  }
   async findChallengeByCreationKey(companyId: string, creationKey: string) {
     return [...this.challenges.values()].find(value =>
       value.companyId === companyId && value.creationKey === creationKey
